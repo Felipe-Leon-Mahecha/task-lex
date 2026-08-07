@@ -1,0 +1,10 @@
+Cómo usar estos íconos en THE GEM (proyecto Capacitor):
+
+1. Andá a tu carpeta del proyecto Android: android/app/src/main/res/
+2. Por cada carpeta mipmap-XXXdpi de este ZIP, copiá los archivos
+   ic_launcher.png y ic_launcher_round.png DENTRO de la carpeta
+   mipmap-XXXdpi correspondiente en res/ (reemplazando los que ya existen,
+   que son los default de Capacitor).
+3. play_store_icon_512.png es para cuando subas el juego a Google Play
+   Store (no va dentro del proyecto Android, es solo para la ficha de la tienda).
+4. Recompilá con: npx cap sync android, después npx cap run android.
