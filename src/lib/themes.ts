@@ -5,376 +5,479 @@ export type ThemeAnimationClass =
   | 'theme-shine-wave'
   | 'theme-pulse'
   | 'theme-glow'
+  | 'pastel-shine'
+  | 'metal-sheen'
+  | 'diamond-spin'
+  | 'prism-shift'
+  | 'aurora-flow'
+
+export type AppThemeCategory = 'base' | 'pastel' | 'premium'
+export type AccentThemeCategory = 'base' | 'exclusive' | 'custom'
 
 export interface AppTheme {
   id: string
   name: string
+  category: AppThemeCategory
   colors: {
     bg: string
     surface: string
     surface2: string
     text: string
     textMuted: string
+    accent: string
     border: string
   }
-  isDefault?: boolean
+  bgGradient?: string
+  accentGradient?: string
+  accentConic?: string
+  accentText?: string
   animationClass?: ThemeAnimationClass
+  isDefault?: boolean
 }
 
 export interface AccentTheme {
   id: string
   name: string
-  type: 'base' | 'pastel' | 'exclusive' | 'animated'
+  category: AccentThemeCategory
   colors: {
     accent: string
     accentStrong: string
   }
-  gradient?: {
-    from: string
-    to: string
-    angle?: number
-  }
+  gradient?: string
+  conic?: string
+  textColor?: string
+  animationClass?: ThemeAnimationClass
   unlockRequirement?: {
     type: 'tasks' | 'streak'
     value: number
   }
   isUnlocked?: boolean
-  animationClass?: ThemeAnimationClass
 }
 
 export const APP_THEMES: AppTheme[] = [
+  // Categoría Base (7 temas)
   {
-    id: 'dark',
-    name: 'Oscuro',
+    id: 'cielo',
+    name: 'Cielo',
+    category: 'base',
     isDefault: true,
     colors: {
-      bg: '#121212',
-      surface: '#1c1c1c',
-      surface2: '#242424',
-      text: '#f5f0e6',
-      textMuted: '#9c9c9c',
-      border: '#2c2c2c',
+      bg: '#0b1620',
+      surface: '#101f2c',
+      surface2: '#16293a',
+      text: '#eaf4fb',
+      textMuted: '#9db4c4',
+      accent: '#4fb0e8',
+      border: '#1e3a4e',
     },
   },
   {
-    id: 'light',
-    name: 'Claro',
+    id: 'menta',
+    name: 'Menta',
+    category: 'base',
     colors: {
-      bg: '#f5f0e6',
-      surface: '#ebe5d8',
-      surface2: '#e0d9c9',
-      text: '#121212',
-      textMuted: '#6b6b6b',
-      border: '#d4cbb8',
+      bg: '#0a1a16',
+      surface: '#0f251f',
+      surface2: '#15302a',
+      text: '#eafaf4',
+      textMuted: '#9cc4b8',
+      accent: '#3ecf8e',
+      border: '#1c3a32',
     },
   },
   {
-    id: 'midnight',
-    name: 'Medianoche',
-    colors: {
-      bg: '#0a0a0a',
-      surface: '#151515',
-      surface2: '#1a1a1a',
-      text: '#f5f0e6',
-      textMuted: '#9c9c9c',
-      border: '#1f1f1f',
-    },
-  },
-  {
-    id: 'deep-blue',
-    name: 'Azul Profundo',
-    colors: {
-      bg: '#0d1b2a',
-      surface: '#1b263b',
-      surface2: '#253347',
-      text: '#e0e1dd',
-      textMuted: '#778da9',
-      border: '#1b263b',
-    },
-  },
-  {
-    id: 'forest-dark',
-    name: 'Bosque Oscuro',
-    colors: {
-      bg: '#1a2f1a',
-      surface: '#2d4a2d',
-      surface2: '#3d5c3d',
-      text: '#e8f5e8',
-      textMuted: '#8fb58f',
-      border: '#2d4a2d',
-    },
-  },
-  {
-    id: 'purple-dark',
-    name: 'Púrpura Oscuro',
-    colors: {
-      bg: '#1a1025',
-      surface: '#2d1f40',
-      surface2: '#3d2a55',
-      text: '#f0e6f5',
-      textMuted: '#a880b8',
-      border: '#2d1f40',
-    },
-  },
-]
-
-export const ACCENT_THEMES: AccentTheme[] = [
-  // Base accent themes
-  {
-    id: 'gold',
-    name: 'Dorado',
-    type: 'base',
-    colors: {
-      accent: '#e0b563',
-      accentStrong: '#f4d9a6',
-    },
-  },
-  {
-    id: 'blue',
-    name: 'Azul',
-    type: 'base',
-    colors: {
-      accent: '#4a90e2',
-      accentStrong: '#7ab3f0',
-    },
-    animationClass: 'theme-shine-wave',
-  },
-  {
-    id: 'green',
-    name: 'Verde',
-    type: 'base',
-    colors: {
-      accent: '#50c878',
-      accentStrong: '#7ed99a',
-    },
-    animationClass: 'theme-pulse',
-  },
-  {
-    id: 'red',
-    name: 'Rojo',
-    type: 'base',
-    colors: {
-      accent: '#e74c3c',
-      accentStrong: '#f07a6a',
-    },
-    animationClass: 'theme-glow',
-  },
-  {
-    id: 'purple',
-    name: 'Púrpura',
-    type: 'base',
-    colors: {
-      accent: '#9b59b6',
-      accentStrong: '#b07cc6',
-    },
-    animationClass: 'theme-shine-wave',
-  },
-  // Pastel accent themes
-  {
-    id: 'pastel-blue',
-    name: 'Azul Pastel',
-    type: 'pastel',
-    colors: {
-      accent: '#a8d8ea',
-      accentStrong: '#c4e5f2',
-    },
-    unlockRequirement: { type: 'tasks', value: 10 },
-  },
-  {
-    id: 'pastel-pink',
-    name: 'Rosa Pastel',
-    type: 'pastel',
-    colors: {
-      accent: '#f8b4d9',
-      accentStrong: '#fcd4e8',
-    },
-    unlockRequirement: { type: 'tasks', value: 10 },
-  },
-  {
-    id: 'pastel-green',
-    name: 'Verde Pastel',
-    type: 'pastel',
-    colors: {
-      accent: '#b8e6b8',
-      accentStrong: '#d4f2d4',
-    },
-    unlockRequirement: { type: 'tasks', value: 10 },
-  },
-  {
-    id: 'pastel-purple',
-    name: 'Púrpura Pastel',
-    type: 'pastel',
-    colors: {
-      accent: '#d8b4e0',
-      accentStrong: '#ebd4f0',
-    },
-    unlockRequirement: { type: 'tasks', value: 10 },
-  },
-  // Exclusive accent themes (unlockable by streak)
-  {
-    id: 'silver',
-    name: 'Plata',
-    type: 'exclusive',
-    colors: {
-      accent: '#E8E8E8',
-      accentStrong: '#FFFFFF',
-    },
-    unlockRequirement: { type: 'streak', value: 7 },
-    animationClass: 'theme-shine-silver',
-  },
-  {
-    id: 'gold-premium',
-    name: 'Oro Premium',
-    type: 'exclusive',
-    colors: {
-      accent: '#FFD700',
-      accentStrong: '#FFEC8B',
-    },
-    unlockRequirement: { type: 'streak', value: 30 },
-    animationClass: 'theme-shine-gold',
-  },
-  {
-    id: 'diamond',
-    name: 'Diamante',
-    type: 'exclusive',
-    colors: {
-      accent: '#A9CBE6',
-      accentStrong: '#DCEEFA',
-    },
-    unlockRequirement: { type: 'streak', value: 60 },
-    animationClass: 'theme-shine-diamond',
-  },
-  {
-    id: 'prism',
-    name: 'Prisma',
-    type: 'exclusive',
-    colors: {
-      accent: '#FF69B4',
-      accentStrong: '#FFB6C1',
-    },
-    unlockRequirement: { type: 'streak', value: 100 },
-    animationClass: 'theme-pulse',
-  },
-  // Animated gradient accent themes (premium, unlockable for fmleonm19@gmail.com)
-  {
-    id: 'ocean',
-    name: 'Océano',
-    type: 'animated',
-    colors: {
-      accent: '#4FC3F7',
-      accentStrong: '#81D4FA',
-    },
-    gradient: {
-      from: '#0288D1',
-      to: '#4FC3F7',
-      angle: 135,
-    },
-    unlockRequirement: { type: 'streak', value: 50 },
-  },
-  {
-    id: 'sunset',
-    name: 'Atardecer',
-    type: 'animated',
-    colors: {
-      accent: '#FF8A65',
-      accentStrong: '#FFAB91',
-    },
-    gradient: {
-      from: '#FF7043',
-      to: '#FFAB91',
-      angle: 135,
-    },
-    unlockRequirement: { type: 'streak', value: 50 },
-  },
-  {
-    id: 'forest',
+    id: 'bosque',
     name: 'Bosque',
-    type: 'animated',
+    category: 'base',
     colors: {
-      accent: '#66BB6A',
-      accentStrong: '#81C784',
+      bg: '#0c160f',
+      surface: '#122015',
+      surface2: '#182b1c',
+      text: '#eaf5ec',
+      textMuted: '#a0bca8',
+      accent: '#4f9d5c',
+      border: '#21351f',
     },
-    gradient: {
-      from: '#43A047',
-      to: '#66BB6A',
-      angle: 135,
+  },
+  {
+    id: 'atardecer',
+    name: 'Atardecer',
+    category: 'base',
+    colors: {
+      bg: '#1a0f10',
+      surface: '#241516',
+      surface2: '#2f1c1d',
+      text: '#fbeceb',
+      textMuted: '#c99a97',
+      accent: '#ef6f5a',
+      border: '#3a2422',
     },
-    unlockRequirement: { type: 'streak', value: 50 },
+  },
+  {
+    id: 'durazno',
+    name: 'Durazno',
+    category: 'base',
+    colors: {
+      bg: '#1a130c',
+      surface: '#251b11',
+      surface2: '#302416',
+      text: '#fbf0e6',
+      textMuted: '#c7ab92',
+      accent: '#f2a065',
+      border: '#3a2a18',
+    },
+  },
+  {
+    id: 'lavanda',
+    name: 'Lavanda',
+    category: 'base',
+    colors: {
+      bg: '#150f1c',
+      surface: '#1e1627',
+      surface2: '#281d33',
+      text: '#f2ecf9',
+      textMuted: '#b6a5c9',
+      accent: '#a479e0',
+      border: '#33253f',
+    },
+  },
+  {
+    id: 'rojo',
+    name: 'Rojo',
+    category: 'base',
+    colors: {
+      bg: '#180d0d',
+      surface: '#221111',
+      surface2: '#2d1616',
+      text: '#fbe9e9',
+      textMuted: '#c99999',
+      accent: '#e5514a',
+      border: '#3a1e1e',
+    },
+  },
+  // Categoría Pastel (7 temas)
+  {
+    id: 'cielo-pastel',
+    name: 'Cielo - Pastel',
+    category: 'pastel',
+    bgGradient: 'linear-gradient(120deg, #eaf6ff, #d9edfc, #eaf6ff)',
+    colors: {
+      bg: '#eaf6ff',
+      surface: '#f5fbff',
+      surface2: '#e7f3fb',
+      text: '#1d3a4d',
+      textMuted: '#63879c',
+      accent: '#6fb3e0',
+      border: '#cfe6f5',
+    },
+    animationClass: 'pastel-shine',
+  },
+  {
+    id: 'menta-pastel',
+    name: 'Menta - Pastel',
+    category: 'pastel',
+    bgGradient: 'linear-gradient(120deg, #eafcf5, #d7f3e6, #eafcf5)',
+    colors: {
+      bg: '#eafcf5',
+      surface: '#f4fdf9',
+      surface2: '#e3f6ee',
+      text: '#1c3d30',
+      textMuted: '#5f9482',
+      accent: '#5cc79a',
+      border: '#cbeadb',
+    },
+    animationClass: 'pastel-shine',
+  },
+  {
+    id: 'bosque-pastel',
+    name: 'Bosque - Pastel',
+    category: 'pastel',
+    bgGradient: 'linear-gradient(120deg, #eef8ee, #dcefdd, #eef8ee)',
+    colors: {
+      bg: '#eef8ee',
+      surface: '#f5fbf5',
+      surface2: '#e5f2e5',
+      text: '#223a24',
+      textMuted: '#6b8f6d',
+      accent: '#6fac74',
+      border: '#cfe6cf',
+    },
+    animationClass: 'pastel-shine',
+  },
+  {
+    id: 'atardecer-pastel',
+    name: 'Atardecer - Pastel',
+    category: 'pastel',
+    bgGradient: 'linear-gradient(120deg, #fff0ee, #ffdcd6, #fff0ee)',
+    colors: {
+      bg: '#fff0ee',
+      surface: '#fff6f4',
+      surface2: '#ffe6e1',
+      text: '#4a2620',
+      textMuted: '#b0796d',
+      accent: '#f28a72',
+      border: '#f6d2c9',
+    },
+    animationClass: 'pastel-shine',
+  },
+  {
+    id: 'durazno-pastel',
+    name: 'Durazno - Pastel',
+    category: 'pastel',
+    bgGradient: 'linear-gradient(120deg, #fff3e6, #ffe4c7, #fff3e6)',
+    colors: {
+      bg: '#fff3e6',
+      surface: '#fff8ef',
+      surface2: '#ffecd6',
+      text: '#4a3420',
+      textMuted: '#b6906a',
+      accent: '#f0ab6e',
+      border: '#f5dcb9',
+    },
+    animationClass: 'pastel-shine',
+  },
+  {
+    id: 'lavanda-pastel',
+    name: 'Lavanda - Pastel',
+    category: 'pastel',
+    bgGradient: 'linear-gradient(120deg, #f4eefc, #e6d9f6, #f4eefc)',
+    colors: {
+      bg: '#f4eefc',
+      surface: '#f9f5fd',
+      surface2: '#ede2f8',
+      text: '#392a4a',
+      textMuted: '#8d78a8',
+      accent: '#b78de5',
+      border: '#e0cdf2',
+    },
+    animationClass: 'pastel-shine',
+  },
+  {
+    id: 'rojo-pastel',
+    name: 'Rojo - Pastel',
+    category: 'pastel',
+    bgGradient: 'linear-gradient(120deg, #fff0ef, #ffdcda, #fff0ef)',
+    colors: {
+      bg: '#fff0ef',
+      surface: '#fff6f5',
+      surface2: '#ffe4e2',
+      text: '#4a2422',
+      textMuted: '#b57874',
+      accent: '#ef7d76',
+      border: '#f6cfcc',
+    },
+    animationClass: 'pastel-shine',
+  },
+  // Categoría Premium (5 temas)
+  {
+    id: 'plata',
+    name: 'Plata',
+    category: 'premium',
+    colors: {
+      bg: '#101114',
+      surface: '#17181c',
+      surface2: '#1f2126',
+      text: '#f1f2f4',
+      textMuted: '#a7abb3',
+      accent: '#c9ced6',
+      border: '#2a2c31',
+    },
+    accentGradient: 'linear-gradient(120deg, #c9ced6 0%, #f4f6f8 25%, #9ca3ad 50%, #f4f6f8 75%, #c9ced6 100%)',
+    accentText: '#1a1a1a',
+    animationClass: 'metal-sheen',
+  },
+  {
+    id: 'oro',
+    name: 'Oro',
+    category: 'premium',
+    colors: {
+      bg: '#120e08',
+      surface: '#1c150c',
+      surface2: '#241a0f',
+      text: '#f9f1e0',
+      textMuted: '#c9b085',
+      accent: '#d9a635',
+      border: '#372a16',
+    },
+    accentGradient: 'linear-gradient(120deg, #a8791f 0%, #f5d78e 20%, #fff3c4 35%, #d9a635 50%, #fff3c4 65%, #f5d78e 80%, #a8791f 100%)',
+    accentText: '#241a0a',
+    animationClass: 'metal-sheen',
+  },
+  {
+    id: 'diamante',
+    name: 'Diamante',
+    category: 'premium',
+    colors: {
+      bg: '#0a1014',
+      surface: '#10181d',
+      surface2: '#182229',
+      text: '#eef8fc',
+      textMuted: '#9fb9c4',
+      accent: '#dff4ff',
+      border: '#1e2c33',
+    },
+    accentConic: 'conic-gradient(from var(--angle), #dff4ff, #ffffff, #bfe8fb, #eafcff, #dff4ff)',
+    accentText: '#0a1014',
+    animationClass: 'diamond-spin',
+  },
+  {
+    id: 'prisma',
+    name: 'Prisma',
+    category: 'premium',
+    colors: {
+      bg: '#0f0f16',
+      surface: '#17171f',
+      surface2: '#1f1f2b',
+      text: '#f5f2fb',
+      textMuted: '#b3aec4',
+      accent: '#d3e0ff',
+      border: '#2a2836',
+    },
+    accentGradient: 'linear-gradient(115deg, #ffd3e0, #d3e0ff, #d3fff0, #fff3d3, #e3d3ff, #ffd3e0)',
+    accentText: '#1a1622',
+    animationClass: 'prism-shift',
   },
   {
     id: 'aurora',
     name: 'Aurora',
-    type: 'animated',
+    category: 'premium',
     colors: {
-      accent: '#AB47BC',
-      accentStrong: '#BA68C8',
+      bg: '#060912',
+      surface: '#0b1220',
+      surface2: '#101a2c',
+      text: '#eaf3fb',
+      textMuted: '#8fa3bd',
+      accent: '#38bdf8',
+      border: '#16213a',
     },
-    gradient: {
-      from: '#7B1FA2',
-      to: '#AB47BC',
-      angle: 135,
+    accentGradient: 'linear-gradient(120deg, #0ee6b7, #38bdf8, #7c6ff0, #0ee6b7)',
+    accentText: '#041018',
+    animationClass: 'aurora-flow',
+  },
+]
+
+export const ACCENT_THEMES: AccentTheme[] = [
+  // Categoría Base (8 colores planos, sin animación)
+  {
+    id: 'dorado',
+    name: 'Dorado',
+    category: 'base',
+    colors: {
+      accent: '#D9A02B',
+      accentStrong: '#C58F22',
     },
-    unlockRequirement: { type: 'streak', value: 50 },
   },
   {
-    id: 'lavender',
-    name: 'Lavanda',
-    type: 'animated',
+    id: 'azul',
+    name: 'Azul',
+    category: 'base',
     colors: {
-      accent: '#9575CD',
-      accentStrong: '#B39DDB',
+      accent: '#3E82F7',
+      accentStrong: '#2F68D1',
     },
-    gradient: {
-      from: '#5E35B1',
-      to: '#9575CD',
-      angle: 135,
-    },
-    unlockRequirement: { type: 'streak', value: 50 },
   },
   {
-    id: 'peach',
-    name: 'Durazno',
-    type: 'animated',
+    id: 'verde',
+    name: 'Verde',
+    category: 'base',
     colors: {
-      accent: '#F48FB1',
-      accentStrong: '#F8BBD0',
+      accent: '#34B36A',
+      accentStrong: '#279257',
     },
-    gradient: {
-      from: '#EC407A',
-      to: '#F48FB1',
-      angle: 135,
-    },
-    unlockRequirement: { type: 'streak', value: 50 },
   },
   {
-    id: 'mint',
-    name: 'Menta',
-    type: 'animated',
+    id: 'rojo',
+    name: 'Rojo',
+    category: 'base',
     colors: {
-      accent: '#4DB6AC',
-      accentStrong: '#80CBC4',
+      accent: '#E5473F',
+      accentStrong: '#C93A33',
     },
-    gradient: {
-      from: '#009688',
-      to: '#4DB6AC',
-      angle: 135,
-    },
-    unlockRequirement: { type: 'streak', value: 50 },
   },
   {
-    id: 'sky',
-    name: 'Cielo',
-    type: 'animated',
+    id: 'purpura',
+    name: 'Púrpura',
+    category: 'base',
     colors: {
-      accent: '#64B5F6',
-      accentStrong: '#90CAF9',
+      accent: '#9B5DE0',
+      accentStrong: '#8548C7',
     },
-    gradient: {
-      from: '#1E88E5',
-      to: '#64B5F6',
-      angle: 135,
+  },
+  {
+    id: 'rosa',
+    name: 'Rosa',
+    category: 'base',
+    colors: {
+      accent: '#F0629A',
+      accentStrong: '#D94F85',
     },
-    unlockRequirement: { type: 'streak', value: 50 },
+  },
+  {
+    id: 'naranja',
+    name: 'Naranja',
+    category: 'base',
+    colors: {
+      accent: '#F0883D',
+      accentStrong: '#D4712B',
+    },
+  },
+  {
+    id: 'turquesa',
+    name: 'Turquesa',
+    category: 'base',
+    colors: {
+      accent: '#2EC4C0',
+      accentStrong: '#23A6A2',
+    },
+  },
+  // Categoría Exclusivo (3 premium + 1 personalizado)
+  {
+    id: 'plata-accent',
+    name: 'Plata',
+    category: 'exclusive',
+    colors: {
+      accent: '#c9ced6',
+      accentStrong: '#f4f6f8',
+    },
+    gradient: 'linear-gradient(120deg, #c9ced6 0%, #f4f6f8 25%, #9ca3ad 50%, #f4f6f8 75%, #c9ced6 100%)',
+    textColor: '#1a1a1a',
+    animationClass: 'metal-sheen',
+    unlockRequirement: { type: 'streak', value: 7 },
+  },
+  {
+    id: 'oro-accent',
+    name: 'Oro',
+    category: 'exclusive',
+    colors: {
+      accent: '#d9a635',
+      accentStrong: '#f5d78e',
+    },
+    gradient: 'linear-gradient(120deg, #a8791f 0%, #f5d78e 20%, #fff3c4 35%, #d9a635 50%, #fff3c4 65%, #f5d78e 80%, #a8791f 100%)',
+    textColor: '#241a0a',
+    animationClass: 'metal-sheen',
+    unlockRequirement: { type: 'streak', value: 30 },
+  },
+  {
+    id: 'diamante-accent',
+    name: 'Diamante',
+    category: 'exclusive',
+    colors: {
+      accent: '#dff4ff',
+      accentStrong: '#ffffff',
+    },
+    conic: 'conic-gradient(from var(--angle), #dff4ff, #ffffff, #bfe8fb, #eafcff, #dff4ff)',
+    textColor: '#0a1014',
+    animationClass: 'diamond-spin',
+    unlockRequirement: { type: 'streak', value: 60 },
+  },
+  {
+    id: 'custom',
+    name: 'Personalizado',
+    category: 'custom',
+    colors: {
+      accent: '#D9A02B',
+      accentStrong: '#C58F22',
+    },
   },
 ]
 
@@ -388,31 +491,48 @@ export function applyAppTheme(appThemeId: string) {
   root.style.setProperty('--surface-2', theme.colors.surface2)
   root.style.setProperty('--text', theme.colors.text)
   root.style.setProperty('--text-muted', theme.colors.textMuted)
+  root.style.setProperty('--accent', theme.colors.accent)
   root.style.setProperty('--border', theme.colors.border)
-}
-
-const ALL_ANIMATION_CLASSES: ThemeAnimationClass[] = [
-  'theme-shine-gold',
-  'theme-shine-silver',
-  'theme-shine-diamond',
-  'theme-shine-wave',
-  'theme-pulse',
-  'theme-glow',
-]
-
-/**
- * Aplica la clase de animación del tema al elemento que pinta el fondo
- * animado (por defecto el `<html>`, pásale otro elemento si el fondo vive
- * en un contenedor propio, ej. la tarjeta de "Personalizar acento").
- */
-export function applyAccentAnimation(
-  accentThemeId: string,
-  target: HTMLElement = document.documentElement
-) {
-  const theme = ACCENT_THEMES.find((t) => t.id === accentThemeId)
-  target.classList.remove(...ALL_ANIMATION_CLASSES)
-  if (theme?.animationClass) {
-    target.classList.add(theme.animationClass)
+  
+  // Apply bg gradient for pastel themes
+  if (theme.bgGradient) {
+    root.style.setProperty('--bg', theme.bgGradient)
+    root.style.setProperty('--bg-gradient-size', '220% 100%')
+    root.style.setProperty('--bg-gradient-animation', 'pastel-shine 16s ease-in-out infinite')
+  } else {
+    root.style.removeProperty('--bg-gradient-size')
+    root.style.removeProperty('--bg-gradient-animation')
+  }
+  
+  // Apply accent gradient/conic for premium themes
+  if (theme.accentGradient) {
+    root.style.setProperty('--accent-gradient', theme.accentGradient)
+    root.style.setProperty('--accent-gradient-size', '250% 100%')
+  } else if (theme.accentConic) {
+    root.style.setProperty('--accent-conic', theme.accentConic)
+  }
+  
+  if (theme.accentText) {
+    root.style.setProperty('--accent-text', theme.accentText)
+  }
+  
+  // Apply animation class
+  const ALL_ANIMATION_CLASSES: ThemeAnimationClass[] = [
+    'theme-shine-gold',
+    'theme-shine-silver',
+    'theme-shine-diamond',
+    'theme-shine-wave',
+    'theme-pulse',
+    'theme-glow',
+    'pastel-shine',
+    'metal-sheen',
+    'diamond-spin',
+    'prism-shift',
+    'aurora-flow',
+  ]
+  root.classList.remove(...ALL_ANIMATION_CLASSES)
+  if (theme.animationClass) {
+    root.classList.add(theme.animationClass)
   }
 }
 
@@ -424,20 +544,43 @@ export function applyAccentTheme(accentThemeId: string) {
   root.style.setProperty('--accent', theme.colors.accent)
   root.style.setProperty('--accent-strong', theme.colors.accentStrong)
   
-  // Apply gradient: si el tema define uno se usa tal cual, si no, se deriva
-  // de sus propios colores para que theme-shine-wave/pulse/glow igual funcionen.
+  // Apply gradient for exclusive themes
   if (theme.gradient) {
-    root.style.setProperty('--gradient-from', theme.gradient.from)
-    root.style.setProperty('--gradient-to', theme.gradient.to)
-    root.style.setProperty('--gradient-angle', `${theme.gradient.angle || 135}deg`)
-    root.style.setProperty('--has-gradient', '1')
+    root.style.setProperty('--accent-gradient', theme.gradient)
+    root.style.setProperty('--accent-gradient-size', '250% 100%')
+  } else if (theme.conic) {
+    root.style.setProperty('--accent-conic', theme.conic)
   } else {
-    root.style.setProperty('--gradient-from', theme.colors.accent)
-    root.style.setProperty('--gradient-to', theme.colors.accentStrong)
-    root.style.setProperty('--has-gradient', theme.animationClass ? '1' : '0')
+    root.style.removeProperty('--accent-gradient')
+    root.style.removeProperty('--accent-gradient-size')
+    root.style.removeProperty('--accent-conic')
   }
-
-  applyAccentAnimation(accentThemeId)
+  
+  // Apply text color for exclusive themes
+  if (theme.textColor) {
+    root.style.setProperty('--accent-text', theme.textColor)
+  } else {
+    root.style.removeProperty('--accent-text')
+  }
+  
+  // Apply animation class
+  const ALL_ANIMATION_CLASSES: ThemeAnimationClass[] = [
+    'theme-shine-gold',
+    'theme-shine-silver',
+    'theme-shine-diamond',
+    'theme-shine-wave',
+    'theme-pulse',
+    'theme-glow',
+    'pastel-shine',
+    'metal-sheen',
+    'diamond-spin',
+    'prism-shift',
+    'aurora-flow',
+  ]
+  root.classList.remove(...ALL_ANIMATION_CLASSES)
+  if (theme.animationClass) {
+    root.classList.add(theme.animationClass)
+  }
 }
 
 export function applyTheme(appThemeId: string, accentThemeId: string) {
@@ -450,7 +593,7 @@ export function checkAccentThemeUnlocks(completedTasks: number, currentStreak: n
   
   return ACCENT_THEMES.map((theme) => ({
     ...theme,
-    isUnlocked: isPremiumUser || theme.type === 'base' 
+    isUnlocked: isPremiumUser || theme.category === 'base' || theme.category === 'custom'
       ? true 
       : theme.unlockRequirement?.type === 'tasks'
         ? completedTasks >= theme.unlockRequirement.value

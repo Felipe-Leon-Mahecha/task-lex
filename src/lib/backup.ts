@@ -32,7 +32,6 @@ export function exportJSON() {
       notificationsOn: settings.notificationsOn,
       appThemeId: settings.appThemeId,
       accentThemeId: settings.accentThemeId,
-      autoDarkMode: settings.autoDarkMode,
       calendarSync: settings.calendarSync,
       dailyReminderFrequency: settings.dailyReminderFrequency,
       soundsEnabled: settings.soundsEnabled,
@@ -83,7 +82,6 @@ export function importJSON(file: File): Promise<{ ok: boolean; message: string }
             notificationsOn?: boolean
             appThemeId?: string
             accentThemeId?: string
-            autoDarkMode?: boolean
             calendarSync?: boolean
             dailyReminderFrequency?: number
             soundsEnabled?: boolean
@@ -118,7 +116,6 @@ export function importJSON(file: File): Promise<{ ok: boolean; message: string }
           if (data.settings.notificationsOn !== undefined) s.setNotificationsOn(data.settings.notificationsOn)
           if (data.settings.appThemeId !== undefined) s.setAppThemeId(data.settings.appThemeId)
           if (data.settings.accentThemeId !== undefined) s.setAccentThemeId(data.settings.accentThemeId)
-          if (data.settings.autoDarkMode !== undefined) s.setAutoDarkMode(data.settings.autoDarkMode)
           if (data.settings.calendarSync !== undefined) s.setCalendarSync(data.settings.calendarSync)
           if (data.settings.dailyReminderFrequency !== undefined) s.setDailyReminderFrequency(data.settings.dailyReminderFrequency)
           if (data.settings.soundsEnabled !== undefined) s.setSoundsEnabled(data.settings.soundsEnabled)

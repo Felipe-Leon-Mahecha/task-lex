@@ -4,6 +4,7 @@ import { useSettingsStore } from '../../store/settings'
 import { useTasksStore } from '../../store/tasks'
 import { useAuthStore } from '../../store/auth'
 import { APP_THEMES, checkAccentThemeUnlocks, applyAppTheme, applyAccentTheme } from '../../lib/themes'
+import type { AppThemeCategory, AccentThemeCategory } from '../../lib/themes'
 
 function startOfDay(d: Date) {
   const x = new Date(d)
@@ -20,10 +21,8 @@ function sameDay(a: Date, b: Date) {
 export default function ThemeSelector() {
   const appThemeId = useSettingsStore((s) => s.appThemeId)
   const accentThemeId = useSettingsStore((s) => s.accentThemeId)
-  const autoDarkMode = useSettingsStore((s) => s.autoDarkMode)
   const setAppThemeId = useSettingsStore((s) => s.setAppThemeId)
   const setAccentThemeId = useSettingsStore((s) => s.setAccentThemeId)
-  const setAutoDarkMode = useSettingsStore((s) => s.setAutoDarkMode)
   const user = useAuthStore((s) => s.user)
 
   const [activeTab, setActiveTab] = useState<'app' | 'accent'>('app')
@@ -53,26 +52,49 @@ export default function ThemeSelector() {
 
   const handleAccentThemeChange = (themeId: string) => {
     const theme = availableAccentThemes.find((t) => t.id === themeId)
-    if (theme && (theme.isUnlocked || theme.type === 'base')) {
+    if (theme && (theme.isUnlocked || theme.category === 'base' || theme.category === 'custom')) {
       setAccentThemeId(themeId)
       applyAccentTheme(themeId)
     }
   }
 
+  // Group app themes by category
+  const appThemesByCategory = useMemo(() => {
+    const categories: Record<AppThemeCategory, typeof APP_THEMES> = {
+      base: [],
+      pastel: [],
+      premium: [],
+    }
+    APP_THEMES.forEach((theme) => {
+      categories[theme.category].push(theme)
+    })
+    return categories
+  }, [])
+
+  // Group accent themes by category
+  const accentThemesByCategory = useMemo(() => {
+    const categories: Record<AccentThemeCategory, any[]> = {
+      base: [],
+      exclusive: [],
+      custom: [],
+    }
+    availableAccentThemes.forEach((theme) => {
+      categories[theme.category].push(theme)
+    })
+    return categories
+  }, [availableAccentThemes])
+
+  const categoryLabels: Record<AppThemeCategory | AccentThemeCategory, string> = {
+    base: 'Base',
+    pastel: 'Pastel',
+    premium: 'Premium',
+    exclusive: 'Exclusivo',
+    custom: 'Personalizado',
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">Personalizar tema</h3>
-        <label className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-          <input
-            type="checkbox"
-            checked={autoDarkMode}
-            onChange={(e) => setAutoDarkMode(e.target.checked)}
-            className="h-4 w-4 rounded border-[var(--border)] bg-[var(--surface-2)] accent-[var(--accent)]"
-          />
-          Modo oscuro automático
-        </label>
-      </div>
+      <h3 className="text-sm font-medium">Personalizar tema</h3>
 
       {/* Segmented tabs */}
       <div className="relative flex rounded-[10px] bg-[var(--surface-2)] p-[3px]">
@@ -100,29 +122,42 @@ export default function ThemeSelector() {
 
       {/* App Themes Tab */}
       {activeTab === 'app' && (
-        <div className="grid grid-cols-3 gap-2.5">
-          {APP_THEMES.map((theme) => {
-            const isSelected = appThemeId === theme.id
+        <div className="space-y-6">
+          {(Object.keys(appThemesByCategory) as AppThemeCategory[]).map((category) => {
+            const themes = appThemesByCategory[category]
+            if (themes.length === 0) return null
             return (
-              <button
-                key={theme.id}
-                onClick={() => handleAppThemeChange(theme.id)}
-                className={`relative rounded-xl border p-2 text-left transition-colors ${
-                  isSelected ? 'border-[var(--accent)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]'
-                }`}
-              >
-                {isSelected && (
-                  <Check className="absolute right-1.5 top-1.5 h-3.5 w-3.5 text-[var(--accent)]" />
-                )}
-                <div
-                  className="h-11 rounded-lg border p-1.5"
-                  style={{ backgroundColor: theme.colors.bg, borderColor: theme.colors.border }}
-                >
-                  <div className="h-1.5 w-3/5 rounded-full" style={{ backgroundColor: theme.colors.surface2 }} />
-                  <div className="mt-1 h-1.5 w-2/5 rounded-full" style={{ backgroundColor: theme.colors.textMuted }} />
+              <div key={category}>
+                <p className="mb-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                  {categoryLabels[category]}
+                </p>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {themes.map((theme) => {
+                    const isSelected = appThemeId === theme.id
+                    return (
+                      <button
+                        key={theme.id}
+                        onClick={() => handleAppThemeChange(theme.id)}
+                        className={`relative rounded-xl border p-2 text-left transition-colors ${
+                          isSelected ? 'border-[var(--accent)]' : 'border-[var(--border)] hover:border-[var(--border-strong)]'
+                        }`}
+                      >
+                        {isSelected && (
+                          <Check className="absolute right-1.5 top-1.5 h-3.5 w-3.5 text-[var(--accent)]" />
+                        )}
+                        <div
+                          className="h-11 rounded-lg border p-1.5"
+                          style={{ backgroundColor: theme.colors.bg, borderColor: theme.colors.border }}
+                        >
+                          <div className="h-1.5 w-3/5 rounded-full" style={{ backgroundColor: theme.colors.surface2 }} />
+                          <div className="mt-1 h-1.5 w-2/5 rounded-full" style={{ backgroundColor: theme.colors.textMuted }} />
+                        </div>
+                        <p className="mt-1.5 text-xs font-medium">{theme.name}</p>
+                      </button>
+                    )
+                  })}
                 </div>
-                <p className="mt-1.5 text-xs font-medium">{theme.name}</p>
-              </button>
+              </div>
             )
           })}
         </div>
@@ -130,56 +165,105 @@ export default function ThemeSelector() {
 
       {/* Accent Themes Tab */}
       {activeTab === 'accent' && (
-        <div className="grid grid-cols-3 gap-2.5">
-          {availableAccentThemes.map((theme) => {
-            const isSelected = accentThemeId === theme.id
-            const isLocked = !theme.isUnlocked && theme.type !== 'base'
+        <div className="space-y-6">
+          {(Object.keys(accentThemesByCategory) as AccentThemeCategory[]).map((category) => {
+            const themes = accentThemesByCategory[category]
+            if (themes.length === 0) return null
             return (
-              <button
-                key={theme.id}
-                onClick={() => handleAccentThemeChange(theme.id)}
-                disabled={isLocked}
-                className={`rounded-xl border p-2 text-left transition-colors ${
-                  isLocked
-                    ? 'cursor-not-allowed border-[var(--border)] opacity-55'
-                    : isSelected
-                      ? 'border-[var(--accent)]'
-                      : 'border-[var(--border)] hover:border-[var(--border-strong)]'
-                }`}
-              >
-                <div
-                  className={theme.animationClass ? `h-9 rounded-lg ${theme.animationClass}` : 'h-9 rounded-lg'}
-                  style={{
-                    backgroundColor: theme.animationClass ? undefined : theme.colors.accent,
-                    ...(theme.animationClass
-                      ? ({
-                          '--gradient-from': theme.gradient?.from ?? theme.colors.accent,
-                          '--gradient-to': theme.gradient?.to ?? theme.colors.accentStrong,
-                        } as React.CSSProperties)
-                      : {}),
-                  }}
-                />
-                <p className="mt-1.5 text-xs font-medium">{theme.name}</p>
-                <div className="mt-0.5 flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
-                  {isLocked && theme.unlockRequirement ? (
-                    <>
-                      <Lock className="h-2.5 w-2.5" />
-                      {theme.unlockRequirement.type === 'tasks'
-                        ? `${theme.unlockRequirement.value} tareas`
-                        : `${theme.unlockRequirement.value} días racha`}
-                    </>
-                  ) : theme.type === 'base' ? (
-                    'Base'
-                  ) : theme.type === 'pastel' ? (
-                    'Pastel'
-                  ) : (
-                    <>
-                      <Sparkles className="h-2.5 w-2.5" />
-                      Exclusivo
-                    </>
-                  )}
+              <div key={category}>
+                <p className="mb-3 text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider">
+                  {categoryLabels[category]}
+                </p>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {themes.map((theme) => {
+                    const isSelected = accentThemeId === theme.id
+                    const isLocked = !theme.isUnlocked && theme.category !== 'base' && theme.category !== 'custom'
+                    
+                    // Custom color picker
+                    if (theme.category === 'custom') {
+                      return (
+                        <div key={theme.id} className="rounded-xl border border-[var(--border)] p-2">
+                          <input
+                            type="color"
+                            value={theme.colors.accent}
+                            onChange={(e) => {
+                              const hex = e.target.value
+                              setAccentThemeId('custom')
+                              const root = document.documentElement
+                              root.style.setProperty('--accent', hex)
+                              root.style.setProperty('--accent-strong', hex)
+                            }}
+                            className="h-9 w-full rounded cursor-pointer"
+                          />
+                          <p className="mt-1.5 text-xs font-medium">{theme.name}</p>
+                          <input
+                            type="text"
+                            value={theme.colors.accent}
+                            onChange={(e) => {
+                              const hex = e.target.value
+                              if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+                                setAccentThemeId('custom')
+                                const root = document.documentElement
+                                root.style.setProperty('--accent', hex)
+                                root.style.setProperty('--accent-strong', hex)
+                              }
+                            }}
+                            className="mt-1 w-full rounded border border-[var(--border)] bg-[var(--surface-2)] px-2 py-1 text-xs text-[var(--text)]"
+                            placeholder="#000000"
+                            maxLength={7}
+                          />
+                        </div>
+                      )
+                    }
+                    
+                    return (
+                      <button
+                        key={theme.id}
+                        onClick={() => handleAccentThemeChange(theme.id)}
+                        disabled={isLocked}
+                        className={`rounded-xl border p-2 text-left transition-colors ${
+                          isLocked
+                            ? 'cursor-not-allowed border-[var(--border)] opacity-55'
+                            : isSelected
+                              ? 'border-[var(--accent)]'
+                              : 'border-[var(--border)] hover:border-[var(--border-strong)]'
+                        }`}
+                      >
+                        <div
+                          className={theme.animationClass ? `h-9 rounded-lg ${theme.animationClass}` : 'h-9 rounded-lg'}
+                          style={{
+                            backgroundColor: theme.animationClass ? undefined : theme.colors.accent,
+                            ...(theme.animationClass
+                              ? ({
+                                  '--accent-gradient': theme.gradient,
+                                  '--accent-conic': theme.conic,
+                                } as React.CSSProperties)
+                              : {}),
+                          }}
+                        />
+                        <p className="mt-1.5 text-xs font-medium">{theme.name}</p>
+                        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
+                          {isLocked && theme.unlockRequirement ? (
+                            <>
+                              <Lock className="h-2.5 w-2.5" />
+                              {theme.unlockRequirement.type === 'tasks'
+                                ? `${theme.unlockRequirement.value} tareas`
+                                : `${theme.unlockRequirement.value} días racha`}
+                            </>
+                          ) : theme.category === 'base' ? (
+                            'Base'
+                          ) : (
+                            <>
+                              <Sparkles className="h-2.5 w-2.5" />
+                              Exclusivo
+                            </>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
-              </button>
+              </div>
             )
           })}
         </div>

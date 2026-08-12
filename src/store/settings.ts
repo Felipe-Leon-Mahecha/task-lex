@@ -10,7 +10,6 @@ interface SettingsState {
   notificationsOn: boolean
   appThemeId: string
   accentThemeId: string
-  autoDarkMode: boolean
   calendarSync: boolean
   dailyReminderFrequency: number
   soundsEnabled: boolean
@@ -22,7 +21,6 @@ interface SettingsState {
   setNotificationsOn: (on: boolean) => void
   setAppThemeId: (id: string) => void
   setAccentThemeId: (id: string) => void
-  setAutoDarkMode: (enabled: boolean) => void
   setCalendarSync: (enabled: boolean) => void
   setDailyReminderFrequency: (freq: number) => void
   setSoundsEnabled: (enabled: boolean) => void
@@ -36,7 +34,6 @@ function pushToCloud(s: SettingsState) {
   saveSettings(uid, {
     appThemeId: s.appThemeId,
     accentThemeId: s.accentThemeId,
-    autoDarkMode: s.autoDarkMode,
     calendarSync: s.calendarSync,
     dailyGoal: s.dailyGoal,
     focusMinutes: s.focusMinutes,
@@ -52,9 +49,8 @@ export const useSettingsStore = create<SettingsState>()(
       focusMinutes: 25,
       shortBreak: 5,
       notificationsOn: true,
-      appThemeId: 'dark',
-      accentThemeId: 'gold',
-      autoDarkMode: true,
+      appThemeId: 'cielo',
+      accentThemeId: 'dorado',
       calendarSync: false,
       dailyReminderFrequency: 2,
       soundsEnabled: true,
@@ -93,12 +89,6 @@ export const useSettingsStore = create<SettingsState>()(
       setAccentThemeId: (id) =>
         set((s) => {
           const next = { ...s, accentThemeId: id }
-          pushToCloud(next)
-          return next
-        }),
-      setAutoDarkMode: (auto) =>
-        set((s) => {
-          const next = { ...s, autoDarkMode: auto }
           pushToCloud(next)
           return next
         }),

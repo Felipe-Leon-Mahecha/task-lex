@@ -13,7 +13,7 @@ import { useSectionsStore } from './store/sections'
 import { useTutorialStore } from './store/tutorial'
 import { useSettingsStore } from './store/settings'
 import { useTasksStore } from './store/tasks'
-import { applyTheme, applyAppTheme } from './lib/themes'
+import { applyTheme } from './lib/themes'
 import { scheduleDailyReminders } from './lib/notifications'
 import { updateWidgetData } from './lib/widget'
 import { initNetworkListener } from './store/offline'
@@ -60,43 +60,11 @@ export default function App() {
   const touchY = useRef<number | null>(null)
   const appThemeId = useSettingsStore((s) => s.appThemeId)
   const accentThemeId = useSettingsStore((s) => s.accentThemeId)
-  const autoDarkMode = useSettingsStore((s) => s.autoDarkMode)
-  const setAppThemeId = useSettingsStore((s) => s.setAppThemeId)
 
   useEffect(() => {
     // Apply saved theme
     applyTheme(appThemeId, accentThemeId)
   }, [appThemeId, accentThemeId])
-
-  useEffect(() => {
-    // Auto dark mode based on system preference
-    if (autoDarkMode) {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-      const handleChange = (e: MediaQueryListEvent) => {
-        // Only auto-switch if user hasn't manually set a specific theme
-        const isSystemDark = e.matches
-        if (isSystemDark && appThemeId === 'light') {
-          setAppThemeId('dark')
-          applyAppTheme('dark')
-        } else if (!isSystemDark && appThemeId === 'dark') {
-          setAppThemeId('light')
-          applyAppTheme('light')
-        }
-      }
-      
-      // Initial check
-      if (mediaQuery.matches && appThemeId === 'light') {
-        setAppThemeId('dark')
-        applyAppTheme('dark')
-      } else if (!mediaQuery.matches && appThemeId === 'dark') {
-        setAppThemeId('light')
-        applyAppTheme('light')
-      }
-      
-      mediaQuery.addEventListener('change', handleChange)
-      return () => mediaQuery.removeEventListener('change', handleChange)
-    }
-  }, [appThemeId, autoDarkMode])
 
   // Schedule daily reminders when tasks change
   useEffect(() => {

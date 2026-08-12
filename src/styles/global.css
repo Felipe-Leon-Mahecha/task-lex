@@ -162,6 +162,12 @@ h4 {
   initial-value: 135deg;
 }
 
+@property --angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
 @keyframes shine-rotate {
   0% {
     --shine-angle: 45deg;
@@ -175,6 +181,36 @@ h4 {
     --shine-angle: 45deg;
     background-position: 0% 0%;
   }
+}
+
+/* Pastel shine - gradiente sutil y lento para temas pastel */
+@keyframes pastel-shine {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Metal sheen - para Plata y Oro */
+@keyframes metal-sheen {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Diamond spin - para Diamante */
+@keyframes diamond-spin {
+  to { --angle: 360deg; }
+}
+
+/* Prism shift - para Prisma */
+@keyframes prism-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Aurora flow - para Aurora */
+@keyframes aurora-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* Oro: onda diagonal que además rota de dirección con el tiempo */
