@@ -5,6 +5,7 @@ import { useSettingsStore } from '../../store/settings'
 import { AmbientPlayer, SOUND_OPTIONS, type SoundId } from '../../lib/focusSounds'
 import { addFocusMinutes } from '../../lib/focusStats'
 import type { Task } from '../../types/task'
+import Select from './Select'
 
 const quotes = [
   'Una tarea a la vez.',
@@ -175,7 +176,7 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col overflow-y-auto bg-[#0c0c0c] text-[var(--text)]">
+    <div className="fixed inset-0 z-[60] flex flex-col overflow-y-auto bg-[#0c0c0c] text-[var(--text)] animate-in fade-in duration-300">
       <div className="flex items-center justify-between px-5 py-4">
         <span className="eyebrow">Temporizador</span>
         <button
@@ -193,17 +194,13 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
             <label className="mb-1 block text-center text-xs text-[var(--text-muted)]">
               Tarea en foco
             </label>
-            <select
+            <Select
               value={task?.id ?? ''}
-              onChange={(e) => setTaskId(e.target.value)}
+              onChange={setTaskId}
+              options={pending.map((t) => ({ value: t.id, label: t.title }))}
               className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-center text-sm outline-none focus:border-[var(--accent)]"
-            >
-              {pending.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.title}
-                </option>
-              ))}
-            </select>
+              placeholder="Seleccionar tarea"
+            />
           </div>
         )}
 
@@ -285,7 +282,7 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
               step={0.05}
               value={volume}
               onChange={(e) => changeVolume(Number(e.target.value))}
-              className="w-full accent-[var(--accent)]"
+              className="w-full h-2 cursor-pointer appearance-none rounded-full bg-[var(--surface-2)] [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--accent)] [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[var(--surface-2)] [&::-webkit-slider-thumb]:shadow-sm [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--accent)] [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[var(--surface-2)] [&::-moz-range-thumb]:shadow-sm"
             />
           </div>
         </div>

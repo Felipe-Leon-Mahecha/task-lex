@@ -80,25 +80,57 @@ function dueBody(due: Date) {
   }).format(due)}`
 }
 
-async function scheduleNative(task: Task, at: Date) {
+async function scheduleNative(task: Task, at: Date, type?: string) {
   if (!nativePerm) {
     await requestPermission()
     if (!nativePerm) return
   }
-  const nid = hashId(task.id)
+  const nid = hashId(task.id + (type || ''))
   saveMap([...loadMap().filter((x) => x.taskId !== task.id), { taskId: task.id, nid }])
+  
+  // Create action type for task actions
+  const actionTypeId = 'TASK_ACTIONS'
+  
   await LocalNotifications.schedule({
     notifications: [
       {
         id: nid,
         title: `Flux: ${task.title}`,
-        body: task.dueDate ? dueBody(task.dueDate) : 'Esta tarea vence ahora.',
+        body: type ? `${type}: ${task.dueDate ? dueBody(task.dueDate) : 'Esta tarea vence ahora.'}` : (task.dueDate ? dueBody(task.dueDate) : 'Esta tarea vence ahora.'),
         schedule: { at },
         smallIcon: 'ic_stat_flux',
         iconColor: '#25d366',
+        sound: 'notificacion_gem',
+        actionTypeId,
+        extra: { taskId: task.id },
       },
     ],
   })
+  
+  // Register action type if not already registered
+  try {
+    await LocalNotifications.registerActionTypes({
+      types: [
+        {
+          id: actionTypeId,
+          actions: [
+            {
+              id: 'complete',
+              title: 'Completar',
+              requiresAuthentication: false,
+            },
+            {
+              id: 'snooze',
+              title: 'Posponer 10 min',
+              requiresAuthentication: false,
+            },
+          ],
+        },
+      ],
+    })
+  } catch (error) {
+    console.error('Error registering action type:', error)
+  }
 }
 
 export function cancelReminder(taskId: string) {
@@ -116,13 +148,28 @@ export function cancelReminder(taskId: string) {
 
 export async function scheduleReminder(task: Task) {
   if (!notificationsEnabled()) return
-  if (!task.dueDate || !task.reminderLead) return
-  const triggerTs = task.dueDate.getTime() - task.reminderLead
+  if (!task.dueDate) return
+  
+  // Schedule main reminder if reminderLead is set
+  if (task.reminderLead) {
+    const triggerTs = task.dueDate.getTime() - task.reminderLead
+    await scheduleSingleReminder(task, triggerTs, 'Recordatorio')
+  }
+  
+  // Schedule 2-hour before reminder if enabled
+  if (task.reminder2HoursBefore && task.dueDate) {
+    const twoHoursMs = 2 * 60 * 60 * 1000
+    const triggerTs = task.dueDate.getTime() - twoHoursMs
+    await scheduleSingleReminder(task, triggerTs, '2 horas antes')
+  }
+}
+
+async function scheduleSingleReminder(task: Task, triggerTs: number, type: string) {
   if (isNative()) {
     if (triggerTs <= Date.now()) {
-      await scheduleNative(task, new Date())
+      await scheduleNative(task, new Date(), type)
     } else {
-      await scheduleNative(task, new Date(triggerTs))
+      await scheduleNative(task, new Date(triggerTs), type)
     }
     return
   }
@@ -137,7 +184,7 @@ export async function scheduleReminder(task: Task) {
     return
   }
   const options: NotificationOptions = {
-    body: dueBody(task.dueDate),
+    body: task.dueDate ? `${type}: ${dueBody(task.dueDate)}` : `${type}: Esta tarea vence ahora.`,
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
   }
@@ -192,4 +239,61 @@ export function runDueCheck() {
     }
   }
   if (changed) saveQueue(q.filter((r) => new Date(r.due).getTime() > now - 86400000))
+}
+
+export function scheduleDailyReminders(tasks: Task[]) {
+  if (!notificationsEnabled()) return
+  const frequency = useSettingsStore.getState().dailyReminderFrequency
+  const activeTasks = tasks.filter((t) => t.status !== 'done' && !t.archived && t.dueDate)
+  
+  if (activeTasks.length === 0) return
+  
+  const now = new Date()
+  const hoursUntilDue = activeTasks.map((t) => {
+    if (!t.dueDate) return Infinity
+    const due = new Date(t.dueDate)
+    const diff = due.getTime() - now.getTime()
+    return diff / (1000 * 60 * 60)
+  }).filter((h) => h > 0 && h < 24)
+  
+  if (hoursUntilDue.length === 0) return
+  
+  // Schedule reminders based on frequency (1-5 times per day)
+  const interval = 24 / frequency // hours between reminders
+  
+  if (isNative()) {
+    scheduleNativeDailyReminders(activeTasks, frequency, interval)
+  }
+}
+
+async function scheduleNativeDailyReminders(tasks: Task[], frequency: number, interval: number) {
+  if (!nativePerm) {
+    await requestPermission()
+    if (!nativePerm) return
+  }
+  
+  const now = new Date()
+  const notifications = []
+  
+  for (let i = 0; i < frequency; i++) {
+    const reminderTime = new Date(now.getTime() + (i * interval * 60 * 60 * 1000))
+    const pendingTasks = tasks.filter((t) => t.dueDate && new Date(t.dueDate) > reminderTime)
+    
+    if (pendingTasks.length > 0) {
+      const nid = hashId(`daily-${i}`)
+      notifications.push({
+        id: nid,
+        title: `Flux: Tareas pendientes`,
+        body: `Tienes ${pendingTasks.length} tarea(s) pendiente(s) para hoy.`,
+        schedule: { at: reminderTime },
+        smallIcon: 'ic_stat_flux',
+        iconColor: '#25d366',
+        sound: 'notificacion_gem',
+      })
+    }
+  }
+  
+  if (notifications.length > 0) {
+    await LocalNotifications.schedule({ notifications })
+  }
 }

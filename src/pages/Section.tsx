@@ -24,9 +24,9 @@ const recurrenceLabel: Record<Recurrence, string> = {
 }
 const viewTabs: { id: ViewMode; label: string }[] = [
   { id: 'list', label: 'Lista' },
-  { id: 'board', label: 'Kanban' },
+  { id: 'board', label: 'Tablero' },
   { id: 'calendar', label: 'Calendario' },
-  { id: 'gantt', label: 'Gantt' },
+  { id: 'gantt', label: 'Línea de tiempo' },
 ]
 const priorityChips: { id: Priority | 'all'; label: string; dot: string }[] = [
   { id: 'all', label: 'Todas', dot: '' },
@@ -39,6 +39,7 @@ export default function Section({ sectionId }: { sectionId: SectionId }) {
   const tasks = useTasksStore((s) => s.tasks)
   const addTask = useTasksStore((s) => s.addTask)
   const updateTask = useTasksStore((s) => s.updateTask)
+  const reorderTasks = useTasksStore((s) => s.reorderTasks)
   const view = useUIStore((s) => s.views[sectionId])
   const setView = useUIStore((s) => s.setView)
   const label = useSectionsStore((s) => s.sections.find((x) => x.id === sectionId)?.label ?? 'Apartado')
@@ -48,6 +49,8 @@ export default function Section({ sectionId }: { sectionId: SectionId }) {
   const [recurringTask, setRecurringTask] = useState<Task | null>(null)
   const [priorityFilter, setPriorityFilter] = useState<Priority | 'all'>('all')
   const [tagFilter, setTagFilter] = useState<string | null>(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null)
   const openFocus = useUIStore((s) => s.openFocus)
 
   const sectionTasks = tasks
@@ -166,18 +169,27 @@ export default function Section({ sectionId }: { sectionId: SectionId }) {
   }, [recurringTask, applyStatus])
 
   const handleDelete = useCallback((id: string) => {
-    if (window.confirm('¿Eliminar esta tarea?')) useTasksStore.getState().deleteTask(id)
+    setTaskToDelete(id)
+    setDeleteOpen(true)
   }, [])
+
+  const confirmDelete = useCallback(() => {
+    if (taskToDelete) {
+      useTasksStore.getState().deleteTask(taskToDelete)
+      setTaskToDelete(null)
+    }
+    setDeleteOpen(false)
+  }, [taskToDelete])
 
   const handleArchive = useCallback((id: string) => useTasksStore.getState().updateTask(id, { archived: true }), [])
 
   return (
     <SectionShell sectionId={sectionId}>
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{label}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-bold tracking-tight break-words">{label}</h1>
         </div>
-        <button onClick={openNew} className="btn-primary">
+        <button onClick={openNew} className="btn-primary shrink-0 whitespace-nowrap">
           <Plus className="h-4 w-4" /> Nueva tarea
         </button>
       </div>
@@ -250,26 +262,39 @@ export default function Section({ sectionId }: { sectionId: SectionId }) {
 
       <div className="mt-5">
         {view === 'list' && (
-          <ListView
-            tasks={filteredTasks}
-            onToggle={toggleStatus}
-            onEdit={openEdit}
-            onDelete={handleDelete}
-            onArchive={handleArchive}
-            onDuplicate={handleDuplicate}
-            onMove={handleMoveSection}
-          />
+          <div key="list" className="animate-in fade-in slide-in-from-left-2 duration-300">
+            <ListView
+              tasks={filteredTasks}
+              onToggle={toggleStatus}
+              onEdit={openEdit}
+              onDelete={handleDelete}
+              onArchive={handleArchive}
+              onDuplicate={handleDuplicate}
+              onMove={handleMoveSection}
+              onReorder={reorderTasks}
+            />
+          </div>
         )}
         {view === 'board' && (
-          <BoardView
-            tasks={filteredTasks}
-            onMove={moveStatus}
-            onMoveSection={handleMoveSection}
-            onDuplicate={handleDuplicate}
-          />
+          <div key="board" className="animate-in fade-in slide-in-from-left-2 duration-300">
+            <BoardView
+              tasks={filteredTasks}
+              onMove={moveStatus}
+              onMoveSection={handleMoveSection}
+              onDuplicate={handleDuplicate}
+            />
+          </div>
         )}
-        {view === 'calendar' && <CalendarView tasks={filteredTasks} />}
-        {view === 'gantt' && <GanttView tasks={filteredTasks} onToggle={toggleStatus} />}
+        {view === 'calendar' && (
+          <div key="calendar" className="animate-in fade-in slide-in-from-left-2 duration-300">
+            <CalendarView tasks={filteredTasks} />
+          </div>
+        )}
+        {view === 'gantt' && (
+          <div key="gantt" className="animate-in fade-in slide-in-from-left-2 duration-300">
+            <GanttView tasks={filteredTasks} onToggle={toggleStatus} />
+          </div>
+        )}
       </div>
 
       {open && (
@@ -281,6 +306,32 @@ export default function Section({ sectionId }: { sectionId: SectionId }) {
         />
       )}
       <ThemeEditor sectionId={sectionId} open={themeOpen} onClose={() => setThemeOpen(false)} />
+
+      <Modal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="Eliminar tarea"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--text-muted)]">
+            ¿Eliminar esta tarea? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={confirmDelete}
+              className="btn-primary justify-center"
+            >
+              Eliminar
+            </button>
+            <button
+              onClick={() => setDeleteOpen(false)}
+              className="rounded-full border border-[var(--border)] py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)]"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         open={recurringTask !== null}

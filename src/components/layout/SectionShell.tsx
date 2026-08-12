@@ -35,9 +35,12 @@ export default function SectionShell({
     <div
       style={vars}
       data-section={sectionId}
-      className="h-full rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg)] p-4 text-[var(--text)] md:p-6"
+      className="flex h-full flex-col overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)]"
     >
-      {children}
+      {/* Todo el contenido (header, tabs, filtros, vista) vive dentro de este único scroll interno.
+          Ya no depende de un max-height calculado a mano en ListView: el contenedor mismo
+          reparte el espacio y cualquier exceso se scrollea aquí, sin desbordar el cuadro. */}
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">{children}</div>
     </div>
   )
 }

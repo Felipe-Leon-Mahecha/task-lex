@@ -15,8 +15,10 @@ import {
   Timer,
   Waves,
   Globe,
+  Info,
 } from 'lucide-react'
 import { APP_NAME, APP_VERSION } from '../lib/appInfo'
+import { useUIStore } from '../store/ui'
 
 const WA = 'https://wa.me/573104885609?text=¡Hola%20Felipe!%20Vi%20Flux%20y%20me%20interesa%20una%20p%C3%A1gina%20web.'
 const IG = 'https://www.instagram.com/felipeleonmm'
@@ -41,6 +43,8 @@ const studioBullets = [
 ]
 
 export default function Credits() {
+  const openUpdateModal = useUIStore((s) => s.openUpdateModal)
+
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-4">
       <Link
@@ -66,7 +70,7 @@ export default function Credits() {
                   v{APP_VERSION}
                 </span>
               </p>
-              <p className="text-xs text-[var(--text-muted)]">by Felipe León Web Studio</p>
+              <p className="text-xs text-[var(--text-muted)]">by ASCEND</p>
             </div>
           </div>
           <p className="mt-4 text-sm text-[var(--text-muted)]">
@@ -95,9 +99,9 @@ export default function Credits() {
             <a href={IG} target="_blank" rel="noopener noreferrer" className={outlineBtn}>
               <AtSign className="h-4 w-4" /> Instagram
             </a>
-            <a href={WA} target="_blank" rel="noopener noreferrer" className="btn-primary">
-              <MessageCircle className="h-4 w-4" /> Escríbeme
-            </a>
+            <button onClick={openUpdateModal} className={outlineBtn}>
+              <Info className="h-4 w-4" /> Sobre la actualización
+            </button>
           </div>
         </div>
       </div>
@@ -110,7 +114,7 @@ export default function Credits() {
 
       <div className="card overflow-hidden">
         <div className="border-b border-[var(--border)] bg-gradient-to-br from-[var(--accent)]/15 to-transparent p-5">
-          <p className="eyebrow">Felipe León Web Studio</p>
+          <p className="eyebrow">ASCEND</p>
           <h2 className="mt-1 text-xl font-bold tracking-tight">¿Tu negocio todavía no tiene página web?</h2>
           <p className="mt-2 text-sm text-[var(--text-muted)]">
             Creamos páginas web modernas, rápidas y con un diseño que refleja tu marca. De la idea al dominio: tu

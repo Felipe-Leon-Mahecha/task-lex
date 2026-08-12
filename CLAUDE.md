@@ -22,7 +22,7 @@ App de gestión de tareas multiplataforma:
 3. **No inventar colores/fuentes**: usar variables CSS de `src/styles/global.css` (ej: `var(--bg)`, `var(--surface)`, `var(--surface-2)`, `var(--text)`, `var(--text-muted)`, `var(--accent)`, `var(--border)`).
 4. Iconos con **lucide-react**: `import { Nombre } from 'lucide-react'`.
 5. Moneda en **COP**; precio ancla: `desde $500.000 COP`.
-6. No hardcodear WhatsApp/email: config central en `src/lib/site.ts` (ver proyecto Felipe León Web Studio).
+6. No hardcodear WhatsApp/email: config central en `src/lib/site.ts` (ver proyecto ASCEND).
 7. Dark mode: clase `.dark` en `<html>`; en estilos escopeados usar `:global(.dark)`.
 
 ## Cómo funciona el login (importante)
@@ -69,7 +69,7 @@ src/
     Section.tsx               → vista de un apartado: tabs (lista/kanban/calendario/gantt) + filtros + duplicar/mover
     Settings.tsx              → ajustes: preferencias (meta, pomodoro, notificaciones), apartados, backup
     Archive.tsx               → archivo de tareas completadas
-    Credits.tsx               → /creditos (Hecho por Felipe Leon, enlace a Felipe León Web Studio)
+    Credits.tsx               → /creditos (Hecho por Felipe Leon, enlace a ASCEND)
   components/
     layout/
       Header.tsx              → barra superior: menú, SearchBox, status, logout, botón foco (reloj)

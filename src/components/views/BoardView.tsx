@@ -92,8 +92,10 @@ export default function BoardView({
               {colTasks.length === 0 ? (
                 <p className="py-4 text-center text-xs text-[var(--text-muted)]">Vacío</p>
               ) : (
-                colTasks.map((t) => (
-                  <MiniCard key={t.id} task={t} onMove={onMove} onMoveSection={onMoveSection} onDuplicate={onDuplicate} />
+                colTasks.map((t, i) => (
+                  <div key={t.id} className="animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${i * 50}ms` }}>
+                    <MiniCard task={t} onMove={onMove} onMoveSection={onMoveSection} onDuplicate={onDuplicate} />
+                  </div>
                 ))
               )}
             </div>

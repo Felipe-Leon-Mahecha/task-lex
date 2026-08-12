@@ -10,6 +10,10 @@
   --text-muted: #9c9c9c;
   --border: #2c2c2c;
   --radius: 16px;
+  --gradient-from: #e0b563;
+  --gradient-to: #f4d9a6;
+  --gradient-angle: 135deg;
+  --has-gradient: 0;
 }
 
 * {
@@ -105,6 +109,198 @@ h4 {
   100% {
     transform: translateY(110vh) rotate(720deg);
     opacity: 0;
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--accent);
+  color: #121212;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+/* Animated gradient support */
+.animated-accent {
+  background: linear-gradient(
+    var(--gradient-angle),
+    var(--gradient-from),
+    var(--gradient-to)
+  );
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+/* --- Animaciones premium de temas/acentos ---
+   --shine-angle es una custom property registrada con @property: eso permite
+   que el navegador anime el VALOR del ángulo directamente (no solo la posición),
+   así el brillo cambia de dirección en vez de ir siempre en 135deg fijo. */
+@property --shine-angle {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 135deg;
+}
+
+@keyframes shine-rotate {
+  0% {
+    --shine-angle: 45deg;
+    background-position: 0% 0%;
+  }
+  50% {
+    --shine-angle: 225deg;
+    background-position: 100% 100%;
+  }
+  100% {
+    --shine-angle: 45deg;
+    background-position: 0% 0%;
+  }
+}
+
+/* Oro: onda diagonal que además rota de dirección con el tiempo */
+.theme-shine-gold {
+  background-image: linear-gradient(
+    var(--shine-angle),
+    #7a5b12 0%,
+    #e0b563 35%,
+    #fff3b0 50%,
+    #e0b563 65%,
+    #7a5b12 100%
+  );
+  background-size: 250% 250%;
+  animation: shine-rotate 9s ease-in-out infinite;
+}
+
+/* Plata: misma técnica, tonos plateados */
+.theme-shine-silver {
+  background-image: linear-gradient(
+    var(--shine-angle),
+    #8a8a8a 0%,
+    #e8e8e8 35%,
+    #ffffff 50%,
+    #e8e8e8 65%,
+    #8a8a8a 100%
+  );
+  background-size: 250% 250%;
+  animation: shine-rotate 9s ease-in-out infinite;
+}
+
+/* Onda diagonal genérica para cualquier color de acento base o pastel:
+   usa --gradient-from / --gradient-to, así que solo cambias esas dos
+   variables por tema y reutilizas esta misma clase. */
+.theme-shine-wave {
+  background-image: linear-gradient(
+    var(--shine-angle),
+    color-mix(in srgb, var(--gradient-from) 55%, black) 0%,
+    var(--gradient-from) 35%,
+    var(--gradient-to) 50%,
+    var(--gradient-from) 65%,
+    color-mix(in srgb, var(--gradient-from) 55%, black) 100%
+  );
+  background-size: 250% 250%;
+  animation: shine-rotate 9s ease-in-out infinite;
+}
+
+@keyframes theme-pulse {
+  0%,
+  100% {
+    background-size: 140% 140%;
+    opacity: 0.88;
+  }
+  50% {
+    background-size: 185% 185%;
+    opacity: 1;
+  }
+}
+
+/* Pulso radial: para acentos que quieras sentir como "energía" en vez de brillo */
+.theme-pulse {
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    var(--gradient-to),
+    var(--gradient-from) 60%
+  );
+  animation: theme-pulse 3s ease-in-out infinite;
+}
+
+@keyframes theme-glow {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  20% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0.82;
+  }
+  80% {
+    opacity: 0.95;
+  }
+}
+
+/* Destello/brasa: parpadeo irregular, para rojos y colores "cálidos" */
+.theme-glow {
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    var(--gradient-to),
+    var(--gradient-from) 60%
+  );
+  animation: theme-glow 2.4s ease-in-out infinite;
+}
+
+/* Diamante: gradiente cónico único (no repetido) con paradas irregulares para
+   simular facetas de tamaño distinto + una capa de brillo que se desliza encima. */
+.theme-shine-diamond {
+  background-image: linear-gradient(
+      var(--shine-angle),
+      transparent 40%,
+      rgba(255, 255, 255, 0.65) 50%,
+      transparent 60%
+    ),
+    conic-gradient(
+      from 15deg at 32% 42%,
+      rgba(255, 255, 255, 0.35) 0deg 25deg,
+      rgba(180, 210, 235, 0.15) 25deg 70deg,
+      rgba(255, 255, 255, 0.22) 70deg 140deg,
+      rgba(120, 160, 190, 0.14) 140deg 210deg,
+      rgba(255, 255, 255, 0.3) 210deg 300deg,
+      rgba(150, 190, 220, 0.12) 300deg 360deg
+    ),
+    linear-gradient(160deg, #dceefa 0%, #a9cbe6 100%);
+  background-size: 260% 260%, 100% 100%, 100% 100%;
+  animation: shine-rotate 9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-shine-gold,
+  .theme-shine-silver,
+  .theme-shine-wave,
+  .theme-shine-diamond,
+  .theme-pulse,
+  .theme-glow {
+    animation: none;
+    background-position: 50% 50%;
   }
 }
 

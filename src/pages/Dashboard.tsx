@@ -98,7 +98,7 @@ export default function Dashboard() {
       <p className="eyebrow">Dashboard</p>
       <h1 className="mb-6 text-2xl font-bold tracking-tight">Vista general</h1>
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="card p-5">
+        <div className="card p-5 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '0ms' }}>
           <p className="eyebrow">Hoy · {todayTasks.length}</p>
           <div className="mt-4 flex items-center gap-4">
             <div className="relative">
@@ -136,7 +136,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="card p-5">
+        <div className="card p-5 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '50ms' }}>
           <p className="eyebrow">Semana · {week.length}</p>
           <p className="mt-3 text-sm text-[var(--text-muted)]">
             Vienen {week.length} tareas en los próximos 7 días.
@@ -155,7 +155,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="card p-5">
+        <div className="card p-5 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '100ms' }}>
           <p className="eyebrow">Foco del día · {focus.length}</p>
           {focus.length === 0 ? (
             <p className="mt-3 text-sm text-[var(--text-muted)]">
@@ -172,7 +172,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="card p-5">
+        <div className="card p-5 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '150ms' }}>
           <p className="eyebrow">Meta diaria</p>
           <div className="mt-4 flex items-center gap-4">
             <div className="relative">
@@ -196,7 +196,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="card p-5 md:col-span-2">
+        <div className="card p-5 md:col-span-2 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '200ms' }}>
           <div className="flex items-center justify-between">
             <p className="eyebrow">Estadísticas semanales</p>
             <span className="flex items-center gap-1 text-sm font-semibold text-[var(--accent)]">
@@ -240,7 +240,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="card mt-4 p-5">
+      <div className="card mt-4 p-5 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '250ms' }}>
         <p className="eyebrow">Progreso general</p>
         <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[var(--surface-2)]">
           <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${pct}%` }} />

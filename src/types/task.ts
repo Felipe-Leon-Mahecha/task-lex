@@ -45,6 +45,7 @@ export interface Task {
   recurrence: Recurrence
   focusDay: boolean
   reminderLead: number | null
+  reminder2HoursBefore: boolean
   notesLinks: LinkNote[]
   images: string[]
   pomodoro: PomodoroState
@@ -53,6 +54,7 @@ export interface Task {
   updatedAt: Date
   completedAt: Date | null
   archived: boolean
+  calendarEventId?: string
 }
 
 export interface ThemeConfig {
@@ -73,6 +75,8 @@ export interface SectionMeta {
   label: string
   icon: string
   order: number
+  bgImage?: string
+  bgColor?: string
 }
 
 export interface SectionConfig {

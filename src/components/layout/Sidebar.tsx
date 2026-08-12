@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type TouchEvent } from 'react'
-import { Link, NavLink } from 'react-router-dom'
-import { LayoutDashboard, Archive, Settings, X, Plus, Star, MessageSquareHeart, GripVertical, type LucideIcon } from 'lucide-react'
+import { NavLink } from 'react-router-dom'
+import { LayoutDashboard, Archive, Settings, X, Plus, Star, MessageSquareHeart, GripVertical, BarChart3, type LucideIcon } from 'lucide-react'
 import { useThemeStore } from '../../store/theme'
 import { useUIStore } from '../../store/ui'
 import { useSectionsStore } from '../../store/sections'
@@ -53,28 +53,30 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
     setDragId(null)
   }
 
-  const renderLink = (to: string, label: string, Icon: LucideIcon, end?: boolean) => (
+  const renderLink = (to: string, label: string, Icon: LucideIcon, end?: boolean, isDashboard?: boolean) => (
     <NavLink
       key={to}
       to={to}
       end={end ?? to === '/'}
       onClick={onNavigate}
       className={({ isActive }) =>
-        `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+        `flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
+          isDashboard ? 'text-base font-semibold' : 'text-sm'
+        } ${
           isActive
             ? 'bg-[var(--surface-2)] font-semibold text-[var(--accent)]'
             : 'text-[var(--text-muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]'
         }`
       }
     >
-      <Icon className="h-4 w-4" />
+      <Icon className={`${isDashboard ? 'h-5 w-5' : 'h-4 w-4'}`} />
       {label}
     </NavLink>
   )
 
   return (
     <div className="flex flex-col gap-2">
-      {renderLink('/', 'Dashboard', LayoutDashboard)}
+      {renderLink('/', 'Dashboard', LayoutDashboard, true, true)}
       {sections.map((sec) => {
         const Icon = ICON_MAP[sec.icon] ?? Star
         return (
@@ -105,6 +107,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
       })}
       {renderLink('/archivo', 'Archivo', Archive)}
       {renderLink('/opiniones', 'Opiniones', MessageSquareHeart)}
+      {renderLink('/estadisticas', 'Estadísticas', BarChart3)}
       {renderLink('/ajustes', 'Ajustes', Settings)}
     </div>
   )
@@ -113,6 +116,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 export default function Sidebar() {
   const open = useUIStore((s) => s.sidebarOpen)
   const close = useUIStore((s) => s.closeSidebar)
+  const openUpdateModal = useUIStore((s) => s.openUpdateModal)
   const [newOpen, setNewOpen] = useState(false)
   const touchX = useRef<number | null>(null)
   const touchY = useRef<number | null>(null)
@@ -155,7 +159,7 @@ export default function Sidebar() {
         style={{ transform: open ? 'translateX(0)' : 'translateX(-100%)' }}
         className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-[var(--border)] bg-[var(--bg)] p-4 transition-transform duration-200 sm:hidden"
       >
-        <div className="mb-4 flex shrink-0 items-center justify-between px-2">
+        <div className="mb-6 mt-2 flex shrink-0 items-center justify-between px-2">
           <div className="flex items-center gap-2">
             <img src="/icons/icon-192.png" alt="Flux" className="h-8 w-8 rounded-lg" />
             <span className="text-sm font-bold tracking-tight">Flux</span>
@@ -179,16 +183,15 @@ export default function Sidebar() {
         >
           <Plus className="h-4 w-4" /> Nuevo apartado
         </button>
-        <Link
-          to="/creditos"
-          onClick={close}
-          className="mt-2 flex shrink-0 items-center justify-center gap-1 rounded-lg px-3 py-2 text-[11px] text-[var(--text-muted)] opacity-70 transition-opacity hover:opacity-100"
+        <button
+          onClick={openUpdateModal}
+          className="mt-2 flex shrink-0 items-center justify-center gap-1 rounded-lg px-3 py-2 text-[11px] text-[var(--text-muted)] opacity-70 transition-opacity hover:opacity-100 hover:text-[var(--accent)]"
         >
           {APP_NAME} <span className="text-[var(--accent)]">v{APP_VERSION}</span> · Créditos
-        </Link>
+        </button>
       </aside>
       <aside className="hidden w-64 shrink-0 flex-col gap-2 border-r border-[var(--border)] p-4 sm:flex">
-        <div className="mb-2 flex shrink-0 items-center gap-2 px-2">
+        <div className="mb-4 mt-2 flex shrink-0 items-center gap-2 px-2">
           <img src="/icons/icon-192.png" alt="Flux" className="h-8 w-8 rounded-lg" />
           <span className="text-sm font-bold tracking-tight">Flux</span>
         </div>
@@ -201,12 +204,12 @@ export default function Sidebar() {
         >
           <Plus className="h-4 w-4" /> Nuevo apartado
         </button>
-        <Link
-          to="/creditos"
-          className="mt-2 flex shrink-0 items-center justify-center gap-1 rounded-lg px-3 py-2 text-[11px] text-[var(--text-muted)] opacity-70 transition-opacity hover:opacity-100"
+        <button
+          onClick={openUpdateModal}
+          className="mt-2 flex shrink-0 items-center justify-center gap-1 rounded-lg px-3 py-2 text-[11px] text-[var(--text-muted)] opacity-70 transition-opacity hover:opacity-100 hover:text-[var(--accent)]"
         >
           {APP_NAME} <span className="text-[var(--accent)]">v{APP_VERSION}</span> · Créditos
-        </Link>
+        </button>
       </aside>
       <NewSectionModal open={newOpen} onClose={() => setNewOpen(false)} />
     </>

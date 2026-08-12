@@ -11,6 +11,7 @@ import {
   submitReview,
   type Review,
 } from '../lib/reviews'
+import Modal from '../components/ui/Modal'
 
 const WA = 'https://wa.me/573104885609?text=¡Hola!%20Tengo%20una%20sugerencia%20o%20un%20problema%20con%20Flux.'
 
@@ -76,6 +77,8 @@ export default function Opiniones() {
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
   const [inboxBusy, setInboxBusy] = useState<string | null>(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [reviewToDelete, setReviewToDelete] = useState<Review | null>(null)
 
   const load = useCallback(async () => {
     const [ap, mine, all] = await Promise.all([
@@ -121,11 +124,19 @@ export default function Opiniones() {
   }
 
   const adminDelete = async (r: Review) => {
-    if (!window.confirm(`¿Eliminar la reseña de ${r.name}?`)) return
-    setInboxBusy(r.uid)
-    await deleteReview(r.uid)
-    setInboxBusy(null)
-    await load()
+    setReviewToDelete(r)
+    setDeleteOpen(true)
+  }
+
+  const confirmDeleteReview = async () => {
+    if (reviewToDelete) {
+      setInboxBusy(reviewToDelete.uid)
+      await deleteReview(reviewToDelete.uid)
+      setInboxBusy(null)
+      setReviewToDelete(null)
+      await load()
+    }
+    setDeleteOpen(false)
   }
 
   return (
@@ -200,7 +211,7 @@ export default function Opiniones() {
                   type="checkbox"
                   checked={makePublic}
                   onChange={(e) => setMakePublic(e.target.checked)}
-                  className="mt-0.5"
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--border)] bg-[var(--surface-2)] accent-[var(--accent)] checked:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
                 />
                 <span>
                   Pueden publicar mi reseña en la app. Las sugerencias de mejora llegan directo al equipo, se
@@ -340,6 +351,31 @@ export default function Opiniones() {
           </div>
         </div>
       )}
+      <Modal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="Eliminar reseña"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--text-muted)]">
+            ¿Eliminar la reseña de {reviewToDelete?.name}? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={confirmDeleteReview}
+              className="btn-primary justify-center"
+            >
+              Eliminar
+            </button>
+            <button
+              onClick={() => setDeleteOpen(false)}
+              className="rounded-full border border-[var(--border)] py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)]"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

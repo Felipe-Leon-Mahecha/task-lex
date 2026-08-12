@@ -93,4 +93,4 @@ android/          → proyecto Capacitor/Android
 
 ## Licencia
 
-Código privado de Felipe León Web Studio. Todos los derechos reservados.
+Código privado de ASCEND. Todos los derechos reservados.

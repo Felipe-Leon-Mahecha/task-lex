@@ -33,7 +33,7 @@ export default function CalendarView({ tasks }: { tasks: Task[] }) {
   const dayTasks = tasks.filter((t) => t.dueDate && sameDay(t.dueDate, selected))
 
   return (
-    <div>
+    <div className="rounded-[calc(var(--radius)*0.8)] border border-[var(--border)] bg-[rgba(18,18,18,0.75)] p-4 backdrop-blur-[6px]">
       <div className="mb-4 flex items-center justify-between">
         <button
           onClick={() => setMonth(new Date(year, m - 1, 1))}

@@ -15,11 +15,11 @@ export default function Modal({
   if (!open) return null
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className="card max-h-[90vh] w-full max-w-lg overflow-y-auto p-5"
+        className="card max-h-[90vh] w-full max-w-lg overflow-y-auto p-5 animate-in zoom-in-95 slide-in-from-bottom-4 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">

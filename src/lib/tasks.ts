@@ -11,6 +11,7 @@ export type TaskInput = {
   recurrence: Recurrence
   focusDay: boolean
   reminderLead: number | null
+  reminder2HoursBefore: boolean
   subtasks: { id: string; text: string; done: boolean }[]
   notesLinks: { id: string; type: 'nota' | 'link'; content: string; label?: string }[]
   images: string[]
@@ -49,6 +50,7 @@ export function toTaskInput(t: Task): TaskInput {
     recurrence: t.recurrence,
     focusDay: t.focusDay,
     reminderLead: t.reminderLead,
+    reminder2HoursBefore: t.reminder2HoursBefore,
     subtasks: t.subtasks,
     notesLinks: t.notesLinks,
     images: t.images,

@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { RotateCcw, Trash2 } from 'lucide-react'
 import { useTasksStore } from '../store/tasks'
 import { useSectionsStore } from '../store/sections'
+import Modal from '../components/ui/Modal'
 
 export default function Archive() {
   const tasks = useTasksStore((s) => s.tasks)
@@ -8,11 +10,26 @@ export default function Archive() {
   const deleteTask = useTasksStore((s) => s.deleteTask)
   const sections = useSectionsStore((s) => s.sections)
   const labelOf = (id: string) => sections.find((s) => s.id === id)?.label ?? id
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null)
 
   const completed = tasks.filter((t) => t.status === 'done' && !t.archived)
   const archived = tasks.filter((t) => t.archived)
 
   const restore = (id: string) => updateTask(id, { archived: false, status: 'pending', completedAt: null })
+
+  const handleDeleteClick = (id: string) => {
+    setTaskToDelete(id)
+    setDeleteOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (taskToDelete) {
+      deleteTask(taskToDelete)
+      setTaskToDelete(null)
+    }
+    setDeleteOpen(false)
+  }
 
   return (
     <div>
@@ -69,9 +86,7 @@ export default function Archive() {
                   <RotateCcw className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => {
-                    if (window.confirm('¿Eliminar definitivamente?')) deleteTask(t.id)
-                  }}
+                  onClick={() => handleDeleteClick(t.id)}
                   title="Eliminar"
                   className="rounded p-2 text-[var(--text-muted)] hover:text-red-400"
                 >
@@ -82,6 +97,31 @@ export default function Archive() {
           ))}
         </ul>
       )}
+      <Modal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="Eliminar tarea"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--text-muted)]">
+            ¿Eliminar definitivamente esta tarea? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={confirmDelete}
+              className="btn-primary justify-center"
+            >
+              Eliminar
+            </button>
+            <button
+              onClick={() => setDeleteOpen(false)}
+              className="rounded-full border border-[var(--border)] py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)]"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

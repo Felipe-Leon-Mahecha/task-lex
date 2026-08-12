@@ -1,9 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import { ImagePlus, Loader2, Trash2, X } from 'lucide-react'
+import { ImagePlus, Loader2, Trash2, X, Mic } from 'lucide-react'
 import Modal from '../ui/Modal'
-import { toInputValue, type TaskInput } from '../../lib/tasks'
+import DateTimePicker from '../ui/DateTimePicker'
+import Select from '../ui/Select'
+import { type TaskInput } from '../../lib/tasks'
 import { getUid } from '../../lib/session'
 import { deleteTaskImage, uploadTaskImage } from '../../lib/taskImages'
+import { startVoiceRecognition, isVoiceRecognitionSupported } from '../../lib/voice'
 import type { LinkNote, Priority, Recurrence, Status, Subtask } from '../../types/task'
 
 const field =
@@ -19,19 +22,53 @@ interface Props {
 export default function TaskForm({ open, initial, onSave, onClose }: Props) {
   const [title, setTitle] = useState(initial?.title ?? '')
   const [description, setDescription] = useState(initial?.description ?? '')
-  const [dueDateStr, setDueDateStr] = useState(initial?.dueDate ? toInputValue(initial.dueDate) : '')
+  const [dueDate, setDueDate] = useState<Date | null>(initial?.dueDate ?? null)
   const [priority, setPriority] = useState<Priority>(initial?.priority ?? 'media')
   const [status, setStatus] = useState<Status>(initial?.status ?? 'pending')
   const [recurrence, setRecurrence] = useState<Recurrence>(initial?.recurrence ?? 'none')
   const [focusDay, setFocusDay] = useState(initial?.focusDay ?? false)
   const [reminderLead, setReminderLead] = useState<number | null>(initial?.reminderLead ?? null)
+  const [reminderOption, setReminderOption] = useState<string>(() => {
+    if (!initial?.reminderLead) return 'none'
+    const mins = initial.reminderLead
+    if (mins === 120) return '2h'
+    if (mins === 60) return '1h'
+    if (mins === 1440) return '1d'
+    if (mins === 2880) return '2d'
+    return 'custom'
+  })
+  const [customMinutes, setCustomMinutes] = useState<string>(() => {
+    if (!initial?.reminderLead) return ''
+    const mins = initial.reminderLead
+    if (mins === 120 || mins === 60 || mins === 1440 || mins === 2880) return ''
+    return mins.toString()
+  })
   const [subtasks, setSubtasks] = useState<Subtask[]>(initial?.subtasks ?? [])
   const [notesLinks, setNotesLinks] = useState<LinkNote[]>(initial?.notesLinks ?? [])
   const [tagsText, setTagsText] = useState(initial?.tags.join(', ') ?? '')
   const [images, setImages] = useState<string[]>(initial?.images ?? [])
   const [uploading, setUploading] = useState(false)
   const [limitMsg, setLimitMsg] = useState<string | null>(null)
+  const [isListening, setIsListening] = useState(false)
   const MAX_IMAGES = 2
+
+  const handleVoiceInput = async () => {
+    if (!isVoiceRecognitionSupported()) {
+      alert('Tu navegador no soporta reconocimiento de voz')
+      return
+    }
+
+    setIsListening(true)
+    try {
+      const transcript = await startVoiceRecognition()
+      setTitle(transcript)
+    } catch (error) {
+      console.error('Voice recognition error:', error)
+      alert('Error al reconocer voz. Intenta de nuevo.')
+    } finally {
+      setIsListening(false)
+    }
+  }
 
   const addSubtask = () => setSubtasks([...subtasks, { id: crypto.randomUUID(), text: '', done: false }])
   const updateSubtask = (id: string, text: string) =>
@@ -74,15 +111,25 @@ export default function TaskForm({ open, initial, onSave, onClose }: Props) {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
+    
+    // Calculate reminderLead based on option
+    let leadTime: number | null = null
+    if (reminderOption === '2h') leadTime = 120
+    else if (reminderOption === '1h') leadTime = 60
+    else if (reminderOption === '1d') leadTime = 1440
+    else if (reminderOption === '2d') leadTime = 2880
+    else if (reminderOption === 'custom' && customMinutes) leadTime = Number(customMinutes)
+    
     onSave({
       title: title.trim(),
       description: description.trim(),
-      dueDate: dueDateStr ? new Date(dueDateStr) : null,
+      dueDate,
       priority,
       status,
       recurrence,
       focusDay,
-      reminderLead,
+      reminderLead: leadTime,
+      reminder2HoursBefore: false,
       subtasks: subtasks.filter((s) => s.text.trim()),
       notesLinks: notesLinks.filter((n) => n.content.trim()),
       images,
@@ -98,13 +145,30 @@ export default function TaskForm({ open, initial, onSave, onClose }: Props) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Título *</label>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="¿Qué tienes que hacer?"
-            className={field}
-            autoFocus
-          />
+          <div className="flex gap-2">
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="¿Qué tienes que hacer?"
+              className={`${field} flex-1`}
+              autoFocus
+            />
+            {isVoiceRecognitionSupported() && (
+              <button
+                type="button"
+                onClick={handleVoiceInput}
+                disabled={isListening}
+                className={`flex items-center justify-center rounded-lg border px-3 transition-colors ${
+                  isListening
+                    ? 'border-[var(--accent)] bg-[var(--accent)]/20 text-[var(--accent)]'
+                    : 'border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
+                }`}
+                title="Dictar título"
+              >
+                {isListening ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-5 w-5" />}
+              </button>
+            )}
+          </div>
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Descripción</label>
@@ -119,58 +183,69 @@ export default function TaskForm({ open, initial, onSave, onClose }: Props) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Entrega</label>
-            <input
-              type="datetime-local"
-              value={dueDateStr}
-              onChange={(e) => setDueDateStr(e.target.value)}
+            <DateTimePicker value={dueDate} onChange={setDueDate} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Prioridad</label>
+            <Select
+              value={priority}
+              onChange={(v) => setPriority(v as Priority)}
+              options={[
+                { value: 'baja', label: 'Baja' },
+                { value: 'media', label: 'Media' },
+                { value: 'alta', label: 'Alta' },
+              ]}
               className={field}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Prioridad</label>
-            <select value={priority} onChange={(e) => setPriority(e.target.value as Priority)} className={field}>
-              <option value="baja">Baja</option>
-              <option value="media">Media</option>
-              <option value="alta">Alta</option>
-            </select>
-          </div>
-          <div>
             <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Estado</label>
-            <select value={status} onChange={(e) => setStatus(e.target.value as Status)} className={field}>
-              <option value="pending">Pendiente</option>
-              <option value="in_progress">En progreso</option>
-              <option value="done">Hecha</option>
-            </select>
+            <Select
+              value={status}
+              onChange={(v) => setStatus(v as Status)}
+              options={[
+                { value: 'pending', label: 'Pendiente' },
+                { value: 'in_progress', label: 'En progreso' },
+                { value: 'done', label: 'Hecha' },
+              ]}
+              className={field}
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Recurrencia</label>
-            <select value={recurrence} onChange={(e) => setRecurrence(e.target.value as Recurrence)} className={field}>
-              <option value="none">Sin recurrencia</option>
-              <option value="daily">Diaria</option>
-              <option value="weekly">Semanal</option>
-              <option value="monthly">Mensual</option>
-            </select>
+            <Select
+              value={recurrence}
+              onChange={(v) => setRecurrence(v as Recurrence)}
+              options={[
+                { value: 'none', label: 'Sin recurrencia' },
+                { value: 'daily', label: 'Diaria' },
+                { value: 'weekly', label: 'Semanal' },
+                { value: 'monthly', label: 'Mensual' },
+              ]}
+              className={field}
+            />
           </div>
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Avisar antes</label>
-          <select
-            value={reminderLead ?? ''}
-            onChange={(e) => setReminderLead(e.target.value ? Number(e.target.value) : null)}
+          <Select
+            value={String(reminderLead ?? '')}
+            onChange={(v) => setReminderLead(v ? Number(v) : null)}
+            options={[
+              { value: '', label: 'Sin aviso' },
+              { value: '3600000', label: '1 hora antes' },
+              { value: '86400000', label: '1 día antes' },
+              { value: '172800000', label: '2 días antes' },
+            ]}
             className={field}
-          >
-            <option value="">Sin aviso</option>
-            <option value={3600000}>1 hora antes</option>
-            <option value={86400000}>1 día antes</option>
-            <option value={172800000}>2 días antes</option>
-          </select>
+          />
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
             checked={focusDay}
             onChange={(e) => setFocusDay(e.target.checked)}
-            className="h-4 w-4 accent-[var(--accent)]"
+            className="h-4 w-4 rounded border-[var(--border)] bg-[var(--surface-2)] accent-[var(--accent)] checked:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
           />
           Marcar como foco del día
         </label>
@@ -210,14 +285,15 @@ export default function TaskForm({ open, initial, onSave, onClose }: Props) {
           </div>
           {notesLinks.map((n) => (
             <div key={n.id} className="mb-2 flex items-center gap-2">
-              <select
+              <Select
                 value={n.type}
-                onChange={(e) => updateNote(n.id, { type: e.target.value as LinkNote['type'] })}
-                className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-2 py-2 text-xs outline-none"
-              >
-                <option value="link">Link</option>
-                <option value="nota">Nota</option>
-              </select>
+                onChange={(v) => updateNote(n.id, { type: v as LinkNote['type'] })}
+                options={[
+                  { value: 'link', label: 'Link' },
+                  { value: 'nota', label: 'Nota' },
+                ]}
+                className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-2 py-2 text-xs outline-none w-24"
+              />
               <input
                 value={n.content}
                 onChange={(e) => updateNote(n.id, { content: e.target.value })}
@@ -271,6 +347,36 @@ export default function TaskForm({ open, initial, onSave, onClose }: Props) {
           )}
           {limitMsg && <p className="text-xs text-red-400">{limitMsg}</p>}
         </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Avisar antes</label>
+          <Select
+            value={reminderOption}
+            onChange={(v) => setReminderOption(v)}
+            options={[
+              { value: 'none', label: 'Sin recordatorio' },
+              { value: '1h', label: '1 hora antes' },
+              { value: '2h', label: '2 horas antes' },
+              { value: '1d', label: '1 día antes' },
+              { value: '2d', label: '2 días antes' },
+              { value: 'custom', label: 'Personalizado' },
+            ]}
+            className={field}
+          />
+        </div>
+        {reminderOption === 'custom' && (
+          <div>
+            <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Minutos antes</label>
+            <input
+              type="number"
+              min={1}
+              value={customMinutes}
+              onChange={(e) => setCustomMinutes(e.target.value)}
+              placeholder="Ej: 30"
+              className={field}
+            />
+          </div>
+        )}
 
         <div>
           <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">

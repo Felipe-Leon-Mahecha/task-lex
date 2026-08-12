@@ -1,13 +1,15 @@
 import { useRef, useState, type ChangeEvent } from 'react'
-import { Bell, BellOff, Download, Palette, Play, Upload, Trash2 } from 'lucide-react'
+import { Bell, BellOff, Calendar, Download, Palette, Play, Upload, Trash2, Volume2, VolumeX } from 'lucide-react'
 import { exportJSON, importJSON } from '../lib/backup'
 import { disableAllReminders, requestPermission } from '../lib/notifications'
+import { requestCalendarPermissions } from '../lib/calendar'
 import { useSectionsStore } from '../store/sections'
 import { useSettingsStore } from '../store/settings'
 import { useTutorialStore } from '../store/tutorial'
 import { ICON_MAP } from '../lib/sections'
 import Modal from '../components/ui/Modal'
 import IconPicker from '../components/layout/IconPicker'
+import ThemeSelector from '../components/ui/ThemeSelector'
 
 export default function Settings() {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -18,14 +20,27 @@ export default function Settings() {
   const setSectionIcon = useSectionsStore((s) => s.setIcon)
   const [iconEditor, setIconEditor] = useState<string | null>(null)
   const [pendingIcon, setPendingIcon] = useState('')
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [sectionToDelete, setSectionToDelete] = useState<string | null>(null)
+  const [themeModalOpen, setThemeModalOpen] = useState(false)
   const dailyGoal = useSettingsStore((s) => s.dailyGoal)
   const focusMinutes = useSettingsStore((s) => s.focusMinutes)
   const shortBreak = useSettingsStore((s) => s.shortBreak)
   const notificationsOn = useSettingsStore((s) => s.notificationsOn)
+  const dailyReminderFrequency = useSettingsStore((s) => s.dailyReminderFrequency)
+  const calendarSync = useSettingsStore((s) => s.calendarSync)
+  const soundsEnabled = useSettingsStore((s) => s.soundsEnabled)
+  const autoBackup = useSettingsStore((s) => s.autoBackup)
+  const backupFrequency = useSettingsStore((s) => s.backupFrequency)
   const setDailyGoal = useSettingsStore((s) => s.setDailyGoal)
   const setFocusMinutes = useSettingsStore((s) => s.setFocusMinutes)
   const setShortBreak = useSettingsStore((s) => s.setShortBreak)
   const setNotificationsOn = useSettingsStore((s) => s.setNotificationsOn)
+  const setDailyReminderFrequency = useSettingsStore((s) => s.setDailyReminderFrequency)
+  const setCalendarSync = useSettingsStore((s) => s.setCalendarSync)
+  const setSoundsEnabled = useSettingsStore((s) => s.setSoundsEnabled)
+  const setAutoBackup = useSettingsStore((s) => s.setAutoBackup)
+  const setBackupFrequency = useSettingsStore((s) => s.setBackupFrequency)
 
   const onImport = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -44,6 +59,30 @@ export default function Settings() {
     }
   }
 
+  const toggleCalendarSync = async (on: boolean) => {
+    if (on) {
+      const hasPermission = await requestCalendarPermissions()
+      if (hasPermission) {
+        setCalendarSync(true)
+      }
+    } else {
+      setCalendarSync(false)
+    }
+  }
+
+  const handleDeleteSection = (id: string) => {
+    setSectionToDelete(id)
+    setDeleteOpen(true)
+  }
+
+  const confirmDeleteSection = () => {
+    if (sectionToDelete) {
+      removeSection(sectionToDelete)
+      setSectionToDelete(null)
+    }
+    setDeleteOpen(false)
+  }
+
   return (
     <div>
       <p className="eyebrow">Ajustes</p>
@@ -51,16 +90,6 @@ export default function Settings() {
 
       <div className="card mb-4 max-w-lg p-5">
         <p className="text-sm font-semibold">Guía rápida</p>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">Lo esencial de Flux:</p>
-        <ul className="mt-3 space-y-1.5 text-sm text-[var(--text-muted)]">
-          <li>• El botón ☰ abre el menú con tus apartados.</li>
-          <li>• "+ Nuevo apartado" crea secciones temáticas con su propio estilo.</li>
-          <li>• Dentro de un apartado, el "+" agrega tareas; filtra por prioridad y etiquetas.</li>
-          <li>• El botón del reloj abre el temporizador con sonidos de foco (lluvia, violín, lo-fi).</li>
-          <li>• Marca una meta diaria y mira tu avance en el Dashboard.</li>
-          <li>• El buscador encuentra cualquier tarea al instante (atajo: tecla /).</li>
-          <li>• Atajo de teclado: N abre una nueva tarea en el apartado actual.</li>
-        </ul>
         <button onClick={() => useTutorialStore.getState().start()} className="btn-primary mt-4">
           <Play className="h-4 w-4" /> Ver tutorial animado
         </button>
@@ -134,6 +163,112 @@ export default function Settings() {
             {notificationsOn ? 'Activadas' : 'Apagadas'}
           </button>
         </div>
+        {notificationsOn && (
+          <div className="mt-4 flex items-center justify-between gap-4 border-t border-[var(--border)] pt-4">
+            <div>
+              <p className="text-sm">Recordatorios diarios</p>
+              <p className="text-xs text-[var(--text-muted)]">Veces al día para recordar tareas activas.</p>
+            </div>
+            <select
+              value={dailyReminderFrequency}
+              onChange={(e) => setDailyReminderFrequency(Number(e.target.value))}
+              className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+            >
+              <option value={1}>1 vez</option>
+              <option value={2}>2 veces</option>
+              <option value={3}>3 veces</option>
+              <option value={4}>4 veces</option>
+              <option value={5}>5 veces</option>
+            </select>
+          </div>
+        )}
+      </div>
+
+      <div className="card mb-4 max-w-lg p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold">Sincronización con calendario</p>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              Sincroniza tareas con fecha a Google Calendar.
+            </p>
+          </div>
+          <button
+            onClick={() => toggleCalendarSync(!calendarSync)}
+            className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              calendarSync
+                ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
+                : 'border-[var(--border)] text-[var(--text-muted)]'
+            }`}
+          >
+            <Calendar className="h-4 w-4" />
+            {calendarSync ? 'Activada' : 'Apagada'}
+          </button>
+        </div>
+      </div>
+
+      <div className="card mb-4 max-w-lg p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold">Sonidos</p>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              Reproduce sonidos al crear, completar o eliminar tareas.
+            </p>
+          </div>
+          <button
+            onClick={() => setSoundsEnabled(!soundsEnabled)}
+            className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              soundsEnabled
+                ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
+                : 'border-[var(--border)] text-[var(--text-muted)]'
+            }`}
+          >
+            {soundsEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            {soundsEnabled ? 'Activados' : 'Apagados'}
+          </button>
+        </div>
+      </div>
+
+      <div className="card mb-4 max-w-lg p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-sm font-semibold">Backup automático</p>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              Exporta automáticamente tus datos a JSON.
+            </p>
+          </div>
+          <button
+            onClick={() => setAutoBackup(!autoBackup)}
+            className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              autoBackup
+                ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
+                : 'border-[var(--border)] text-[var(--text-muted)]'
+            }`}
+          >
+            {autoBackup ? 'Activado' : 'Apagado'}
+          </button>
+        </div>
+        {autoBackup && (
+          <div className="flex items-center gap-3">
+            <label className="text-xs text-[var(--text-muted)]">Frecuencia (días):</label>
+            <input
+              type="number"
+              min="1"
+              max="30"
+              value={backupFrequency}
+              onChange={(e) => setBackupFrequency(parseInt(e.target.value) || 7)}
+              className="w-20 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-2 py-1 text-xs outline-none focus:border-[var(--accent)]"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="card mb-4 max-w-lg p-5">
+        <button
+          onClick={() => setThemeModalOpen(true)}
+          className="btn-primary w-full"
+        >
+          <Palette className="h-4 w-4" /> Personalizar tema de la app
+        </button>
       </div>
 
       <div className="card mb-4 max-w-lg p-5">
@@ -170,11 +305,7 @@ export default function Settings() {
                     <Palette className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => {
-                      if (window.confirm(`¿Eliminar el apartado "${sec.label}" y sus tareas?`)) {
-                        removeSection(sec.id)
-                      }
-                    }}
+                    onClick={() => handleDeleteSection(sec.id)}
                     className="shrink-0 rounded p-2 text-[var(--text-muted)] hover:text-red-400"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -239,6 +370,40 @@ export default function Settings() {
             Guardar
           </button>
         </div>
+      </Modal>
+
+      <Modal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="Eliminar apartado"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--text-muted)]">
+            ¿Eliminar el apartado "{sections.find((s) => s.id === sectionToDelete)?.label ?? ''}" y sus tareas? Esta acción no se puede deshacer.
+          </p>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={confirmDeleteSection}
+              className="btn-primary justify-center"
+            >
+              Eliminar
+            </button>
+            <button
+              onClick={() => setDeleteOpen(false)}
+              className="rounded-full border border-[var(--border)] py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)]"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        open={themeModalOpen}
+        onClose={() => setThemeModalOpen(false)}
+        title="Personalizar tema"
+      >
+        <ThemeSelector />
       </Modal>
     </div>
   )

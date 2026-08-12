@@ -84,7 +84,7 @@ export default function GanttView({
       </div>
 
       <div className="overflow-x-auto pb-2">
-        <div className="min-w-[640px]">
+        <div className="min-w-[640px] rounded-lg border border-[var(--border)] bg-[var(--surface-2)] p-4 shadow-lg">
           <div className="grid grid-cols-[160px_1fr] gap-2">
             <div />
             <div className="relative grid grid-cols-14">
