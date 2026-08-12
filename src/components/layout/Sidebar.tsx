@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type TouchEvent } from 'react'
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { LayoutDashboard, Archive, Settings, X, Plus, Star, MessageSquareHeart, GripVertical, BarChart3, type LucideIcon } from 'lucide-react'
 import { useThemeStore } from '../../store/theme'
 import { useUIStore } from '../../store/ui'
@@ -116,7 +116,6 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 export default function Sidebar() {
   const open = useUIStore((s) => s.sidebarOpen)
   const close = useUIStore((s) => s.closeSidebar)
-  const openUpdateModal = useUIStore((s) => s.openUpdateModal)
   const [newOpen, setNewOpen] = useState(false)
   const touchX = useRef<number | null>(null)
   const touchY = useRef<number | null>(null)
@@ -183,12 +182,13 @@ export default function Sidebar() {
         >
           <Plus className="h-4 w-4" /> Nuevo apartado
         </button>
-        <button
-          onClick={openUpdateModal}
-          className="mt-2 flex shrink-0 items-center justify-center gap-1 rounded-lg px-3 py-2 text-[11px] text-[var(--text-muted)] opacity-70 transition-opacity hover:opacity-100 hover:text-[var(--accent)]"
+        <Link
+          to="/creditos"
+          onClick={close}
+          className="mt-2 flex shrink-0 items-center justify-center gap-1 rounded-lg px-3 py-2 text-[11px] text-[var(--text-muted)] opacity-70 transition-opacity hover:opacity-100"
         >
           {APP_NAME} <span className="text-[var(--accent)]">v{APP_VERSION}</span> · Créditos
-        </button>
+        </Link>
       </aside>
       <aside className="hidden w-64 shrink-0 flex-col gap-2 border-r border-[var(--border)] p-4 sm:flex">
         <div className="mb-4 mt-2 flex shrink-0 items-center gap-2 px-2">
@@ -204,12 +204,12 @@ export default function Sidebar() {
         >
           <Plus className="h-4 w-4" /> Nuevo apartado
         </button>
-        <button
-          onClick={openUpdateModal}
-          className="mt-2 flex shrink-0 items-center justify-center gap-1 rounded-lg px-3 py-2 text-[11px] text-[var(--text-muted)] opacity-70 transition-opacity hover:opacity-100 hover:text-[var(--accent)]"
+        <Link
+          to="/creditos"
+          className="mt-2 flex shrink-0 items-center justify-center gap-1 rounded-lg px-3 py-2 text-[11px] text-[var(--text-muted)] opacity-70 transition-opacity hover:opacity-100"
         >
           {APP_NAME} <span className="text-[var(--accent)]">v{APP_VERSION}</span> · Créditos
-        </button>
+        </Link>
       </aside>
       <NewSectionModal open={newOpen} onClose={() => setNewOpen(false)} />
     </>
