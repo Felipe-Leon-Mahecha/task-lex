@@ -52,6 +52,8 @@ body,
 body {
   margin: 0;
   background: var(--bg);
+  background-size: var(--bg-gradient-size, auto);
+  animation: var(--bg-gradient-animation, none);
   color: var(--text);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -195,7 +197,7 @@ h4 {
   100% { background-position: 200% 50%; }
 }
 
-/* Diamond spin - para Diamante */
+/* Diamond spin - conserva el giro cónico por si algo más lo usa */
 @keyframes diamond-spin {
   to { --angle: 360deg; }
 }
@@ -206,7 +208,7 @@ h4 {
   50% { background-position: 100% 50%; }
 }
 
-/* Aurora flow - para Aurora */
+/* Aurora flow - shimmer simple de respaldo (se usa además la escena real más abajo) */
 @keyframes aurora-flow {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -305,8 +307,7 @@ h4 {
   animation: theme-glow 2.4s ease-in-out infinite;
 }
 
-/* Diamante: gradiente cónico único (no repetido) con paradas irregulares para
-   simular facetas de tamaño distinto + una capa de brillo que se desliza encima. */
+/* Diamante (sistema viejo por sección, se deja intacto por compatibilidad) */
 .theme-shine-diamond {
   background-image: linear-gradient(
       var(--shine-angle),
@@ -337,6 +338,157 @@ h4 {
   .theme-glow {
     animation: none;
     background-position: 50% 50%;
+  }
+}
+
+/* ==========================================================================
+   Conexión real de los temas Premium / Acentos exclusivos (themes.ts)
+   Estas son las clases que applyAppTheme / applyAccentTheme agregan por
+   classList: 'metal-sheen', 'diamond-spin', 'prism-shift', 'aurora-flow'.
+   Antes solo existían los @keyframes sueltos y ninguna regla los usaba —
+   por eso no se veía nada animado. Cada una funciona en dos contextos:
+   1) aplicada directo a un elemento (swatch del selector, que ya recibe
+      --accent-gradient / --accent-conic por inline style desde React).
+   2) aplicada al <html> (tema de app completo) — en ese caso el efecto
+      cae sobre .btn-primary y sobre la clase utilitaria .accent-shine,
+      que puedes agregar a cualquier botón/barra que quieras que brille.
+   ========================================================================== */
+
+/* Oro y Plata: onda metálica diagonal */
+.metal-sheen,
+html.metal-sheen .btn-primary,
+html.metal-sheen .accent-shine {
+  background-image: var(--accent-gradient);
+  background-size: 250% 100%;
+  animation: metal-sheen 4s linear infinite;
+  color: var(--accent-text, #121212);
+}
+
+/* Diamante: facetas irregulares de verdad (no un patrón repetido uniforme)
+   + una pasada de brillo diagonal que se mueve encima. */
+.diamond-spin,
+html.diamond-spin .btn-primary,
+html.diamond-spin .accent-shine {
+  position: relative;
+  overflow: hidden;
+  background-color: #c9dced;
+  background-repeat: repeat;
+  background-size: 90px 90px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Crect width='90' height='90' fill='%23dceefa'/%3E%3Cpolygon points='0,0 26,6 10,29' fill='%23eef5fb'/%3E%3Cpolygon points='26,6 45,0 36,23 10,29' fill='%23c9dced'/%3E%3Cpolygon points='45,0 90,0 71,19 36,23' fill='%23bfe0f5'/%3E%3Cpolygon points='71,19 90,0 90,35 61,39' fill='%23eef5fb'/%3E%3Cpolygon points='10,29 36,23 61,39 39,55' fill='%23a9cbe6'/%3E%3Cpolygon points='36,23 71,19 61,39' fill='%23ffffff'/%3E%3Cpolygon points='61,39 90,35 90,71 65,61' fill='%23c9dced'/%3E%3Cpolygon points='39,55 61,39 65,61 42,77' fill='%23eef5fb'/%3E%3Cpolygon points='0,29 10,29 39,55 13,71 0,58' fill='%23bfe0f5'/%3E%3Cpolygon points='13,71 39,55 42,77 19,90 0,90 0,58' fill='%23a9cbe6'/%3E%3Cpolygon points='42,77 65,61 90,71 90,90 19,90' fill='%23ffffff'/%3E%3C/svg%3E");
+  color: var(--accent-text, #0a1014);
+}
+
+.diamond-spin::after,
+html.diamond-spin .btn-primary::after,
+html.diamond-spin .accent-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    var(--shine-angle, 135deg),
+    transparent 35%,
+    rgba(255, 255, 255, 0.85) 50%,
+    transparent 65%
+  );
+  background-size: 260% 260%;
+  animation: shine-rotate 6s ease-in-out infinite;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* Prisma: refracción pastel multicolor */
+.prism-shift,
+html.prism-shift .btn-primary,
+html.prism-shift .accent-shine {
+  background-image: var(--accent-gradient);
+  background-size: 300% 100%;
+  animation: prism-shift 8s ease-in-out infinite;
+  color: var(--accent-text, #1a1622);
+}
+
+/* Aurora: escena real detrás del contenido — fondo azul noche fijo +
+   dos capas de "cintas" curvas (skew + translate) que ondulan y cambian
+   de tono con hue-rotate, en vez de manchas circulares quietas. */
+@property --aurora-hue {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+html.aurora-flow body {
+  position: relative;
+  overflow-x: hidden;
+}
+
+html.aurora-flow body::before,
+html.aurora-flow body::after {
+  content: '';
+  position: fixed;
+  inset: -15%;
+  z-index: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+html.aurora-flow body::before {
+  background-image:
+    radial-gradient(ellipse 20% 140% at 28% 40%, rgba(46, 230, 183, 0.55), transparent 65%),
+    radial-gradient(ellipse 16% 130% at 55% 55%, rgba(56, 189, 248, 0.5), transparent 65%);
+  filter: blur(14px) hue-rotate(var(--aurora-hue));
+  animation:
+    aurora-drift-a 12s ease-in-out infinite alternate,
+    aurora-hue-shift 18s ease-in-out infinite;
+}
+
+html.aurora-flow body::after {
+  background-image:
+    radial-gradient(ellipse 18% 150% at 68% 45%, rgba(124, 111, 240, 0.5), transparent 65%),
+    radial-gradient(ellipse 14% 120% at 45% 28%, rgba(14, 230, 183, 0.4), transparent 65%);
+  filter: blur(16px) hue-rotate(var(--aurora-hue));
+  animation:
+    aurora-drift-b 15s ease-in-out infinite alternate,
+    aurora-hue-shift 22s ease-in-out infinite reverse;
+}
+
+html.aurora-flow #root {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes aurora-drift-a {
+  0% { transform: translateX(-6%) skewX(-6deg) scaleY(1); }
+  50% { transform: translateX(4%) skewX(3deg) scaleY(1.08); }
+  100% { transform: translateX(-6%) skewX(-6deg) scaleY(1); }
+}
+
+@keyframes aurora-drift-b {
+  0% { transform: translateX(6%) skewX(5deg) scaleY(1.05); }
+  50% { transform: translateX(-5%) skewX(-4deg) scaleY(0.95); }
+  100% { transform: translateX(6%) skewX(5deg) scaleY(1.05); }
+}
+
+@keyframes aurora-hue-shift {
+  0% { --aurora-hue: 0deg; }
+  50% { --aurora-hue: 35deg; }
+  100% { --aurora-hue: 0deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .metal-sheen,
+  .diamond-spin,
+  .diamond-spin::after,
+  .prism-shift,
+  html.metal-sheen .btn-primary,
+  html.metal-sheen .accent-shine,
+  html.diamond-spin .btn-primary,
+  html.diamond-spin .accent-shine,
+  html.diamond-spin .btn-primary::after,
+  html.diamond-spin .accent-shine::after,
+  html.prism-shift .btn-primary,
+  html.prism-shift .accent-shine,
+  html.aurora-flow body::before,
+  html.aurora-flow body::after {
+    animation: none;
   }
 }
 

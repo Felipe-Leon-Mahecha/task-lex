@@ -493,7 +493,7 @@ export function applyAppTheme(appThemeId: string) {
   root.style.setProperty('--text-muted', theme.colors.textMuted)
   root.style.setProperty('--accent', theme.colors.accent)
   root.style.setProperty('--border', theme.colors.border)
-  
+
   // Apply bg gradient for pastel themes
   if (theme.bgGradient) {
     root.style.setProperty('--bg', theme.bgGradient)
@@ -503,19 +503,24 @@ export function applyAppTheme(appThemeId: string) {
     root.style.removeProperty('--bg-gradient-size')
     root.style.removeProperty('--bg-gradient-animation')
   }
-  
+
   // Apply accent gradient/conic for premium themes
   if (theme.accentGradient) {
     root.style.setProperty('--accent-gradient', theme.accentGradient)
     root.style.setProperty('--accent-gradient-size', '250% 100%')
   } else if (theme.accentConic) {
     root.style.setProperty('--accent-conic', theme.accentConic)
+  } else {
+    root.style.removeProperty('--accent-gradient')
+    root.style.removeProperty('--accent-conic')
   }
-  
+
   if (theme.accentText) {
     root.style.setProperty('--accent-text', theme.accentText)
+  } else {
+    root.style.removeProperty('--accent-text')
   }
-  
+
   // Apply animation class
   const ALL_ANIMATION_CLASSES: ThemeAnimationClass[] = [
     'theme-shine-gold',
@@ -543,7 +548,7 @@ export function applyAccentTheme(accentThemeId: string) {
   const root = document.documentElement
   root.style.setProperty('--accent', theme.colors.accent)
   root.style.setProperty('--accent-strong', theme.colors.accentStrong)
-  
+
   // Apply gradient for exclusive themes
   if (theme.gradient) {
     root.style.setProperty('--accent-gradient', theme.gradient)
@@ -555,14 +560,14 @@ export function applyAccentTheme(accentThemeId: string) {
     root.style.removeProperty('--accent-gradient-size')
     root.style.removeProperty('--accent-conic')
   }
-  
+
   // Apply text color for exclusive themes
   if (theme.textColor) {
     root.style.setProperty('--accent-text', theme.textColor)
   } else {
     root.style.removeProperty('--accent-text')
   }
-  
+
   // Apply animation class
   const ALL_ANIMATION_CLASSES: ThemeAnimationClass[] = [
     'theme-shine-gold',
@@ -590,11 +595,11 @@ export function applyTheme(appThemeId: string, accentThemeId: string) {
 
 export function checkAccentThemeUnlocks(completedTasks: number, currentStreak: number, userEmail?: string): AccentTheme[] {
   const isPremiumUser = userEmail === 'fmleonm19@gmail.com'
-  
+
   return ACCENT_THEMES.map((theme) => ({
     ...theme,
     isUnlocked: isPremiumUser || theme.category === 'base' || theme.category === 'custom'
-      ? true 
+      ? true
       : theme.unlockRequirement?.type === 'tasks'
         ? completedTasks >= theme.unlockRequirement.value
         : currentStreak >= (theme.unlockRequirement?.value || 0),
