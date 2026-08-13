@@ -8,6 +8,11 @@ interface UpdateModalProps {
 }
 
 const CHANGELOG: Record<string, string[]> = {
+  '3.2.0': [
+    '🎨 Sistema de temas mejorado: colores ahora responden a variables CSS',
+    '✨ Animaciones premium en botones de acento para temas Oro, Plata, Diamante',
+    '🐛 Corrección de colores fijos que no cambiaban con el tema',
+  ],
   '3.0.0': [
     '🎨 Splash Screen animada con logo y branding profesional',
     '📳 Haptic Feedback: vibración al completar tareas (diferente por prioridad)',

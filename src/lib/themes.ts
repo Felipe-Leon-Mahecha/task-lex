@@ -10,6 +10,9 @@ export type ThemeAnimationClass =
   | 'diamond-spin'
   | 'prism-shift'
   | 'aurora-flow'
+  | 'app-metal-sheen'
+  | 'app-diamond-spin'
+  | 'app-prism-shift'
 
 export type AppThemeCategory = 'base' | 'pastel' | 'premium'
 export type AccentThemeCategory = 'base' | 'exclusive' | 'custom'
@@ -284,7 +287,7 @@ export const APP_THEMES: AppTheme[] = [
     },
     accentGradient: 'linear-gradient(120deg, #c9ced6 0%, #f4f6f8 25%, #9ca3ad 50%, #f4f6f8 75%, #c9ced6 100%)',
     accentText: '#1a1a1a',
-    animationClass: 'metal-sheen',
+    animationClass: 'app-metal-sheen',
   },
   {
     id: 'oro',
@@ -301,7 +304,7 @@ export const APP_THEMES: AppTheme[] = [
     },
     accentGradient: 'linear-gradient(120deg, #a8791f 0%, #f5d78e 20%, #fff3c4 35%, #d9a635 50%, #fff3c4 65%, #f5d78e 80%, #a8791f 100%)',
     accentText: '#241a0a',
-    animationClass: 'metal-sheen',
+    animationClass: 'app-metal-sheen',
   },
   {
     id: 'diamante',
@@ -318,7 +321,7 @@ export const APP_THEMES: AppTheme[] = [
     },
     accentConic: 'conic-gradient(from var(--angle), #dff4ff, #ffffff, #bfe8fb, #eafcff, #dff4ff)',
     accentText: '#0a1014',
-    animationClass: 'diamond-spin',
+    animationClass: 'app-diamond-spin',
   },
   {
     id: 'prisma',
@@ -335,7 +338,7 @@ export const APP_THEMES: AppTheme[] = [
     },
     accentGradient: 'linear-gradient(115deg, #ffd3e0, #d3e0ff, #d3fff0, #fff3d3, #e3d3ff, #ffd3e0)',
     accentText: '#1a1622',
-    animationClass: 'prism-shift',
+    animationClass: 'app-prism-shift',
   },
   {
     id: 'aurora',
@@ -521,21 +524,15 @@ export function applyAppTheme(appThemeId: string) {
     root.style.removeProperty('--accent-text')
   }
 
-  // Apply animation class
-  const ALL_ANIMATION_CLASSES: ThemeAnimationClass[] = [
-    'theme-shine-gold',
-    'theme-shine-silver',
-    'theme-shine-diamond',
-    'theme-shine-wave',
-    'theme-pulse',
-    'theme-glow',
+  // Apply animation class — solo clases de nivel APP, nunca toca las de Acento
+  const APP_ANIMATION_CLASSES: ThemeAnimationClass[] = [
     'pastel-shine',
-    'metal-sheen',
-    'diamond-spin',
-    'prism-shift',
+    'app-metal-sheen',
+    'app-diamond-spin',
+    'app-prism-shift',
     'aurora-flow',
   ]
-  root.classList.remove(...ALL_ANIMATION_CLASSES)
+  root.classList.remove(...APP_ANIMATION_CLASSES)
   if (theme.animationClass) {
     root.classList.add(theme.animationClass)
   }
@@ -568,21 +565,9 @@ export function applyAccentTheme(accentThemeId: string) {
     root.style.removeProperty('--accent-text')
   }
 
-  // Apply animation class
-  const ALL_ANIMATION_CLASSES: ThemeAnimationClass[] = [
-    'theme-shine-gold',
-    'theme-shine-silver',
-    'theme-shine-diamond',
-    'theme-shine-wave',
-    'theme-pulse',
-    'theme-glow',
-    'pastel-shine',
-    'metal-sheen',
-    'diamond-spin',
-    'prism-shift',
-    'aurora-flow',
-  ]
-  root.classList.remove(...ALL_ANIMATION_CLASSES)
+  // Apply animation class — solo clases de nivel ACENTO, nunca toca las de App Theme
+  const ACCENT_ANIMATION_CLASSES: ThemeAnimationClass[] = ['metal-sheen', 'diamond-spin']
+  root.classList.remove(...ACCENT_ANIMATION_CLASSES)
   if (theme.animationClass) {
     root.classList.add(theme.animationClass)
   }
