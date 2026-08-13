@@ -90,7 +90,7 @@ export default function Settings() {
 
       <div className="card mb-4 max-w-lg p-5">
         <p className="text-sm font-semibold">Guía rápida</p>
-        <button onClick={() => useTutorialStore.getState().start()} className="btn-primary mt-4">
+        <button onClick={() => useTutorialStore.getState().start()} className="btn-primary mt-4 accent-shine">
           <Play className="h-4 w-4" /> Ver tutorial animado
         </button>
       </div>
@@ -265,7 +265,7 @@ export default function Settings() {
       <div className="card mb-4 max-w-lg p-5">
         <button
           onClick={() => setThemeModalOpen(true)}
-          className="btn-primary w-full"
+          className="btn-primary w-full accent-shine"
         >
           <Palette className="h-4 w-4" /> Personalizar tema de la app
         </button>
@@ -323,7 +323,7 @@ export default function Settings() {
           Exporta o importa todas tus tareas, apartados y temas en un archivo JSON.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <button onClick={exportJSON} className="btn-primary">
+          <button onClick={exportJSON} className="btn-primary accent-shine">
             <Download className="h-4 w-4" /> Exportar JSON
           </button>
           <button
@@ -365,7 +365,7 @@ export default function Settings() {
               if (iconEditor) setSectionIcon(iconEditor, pendingIcon)
               setIconEditor(null)
             }}
-            className="btn-primary"
+            className="btn-primary accent-shine"
           >
             Guardar
           </button>
@@ -384,7 +384,7 @@ export default function Settings() {
           <div className="flex flex-col gap-2">
             <button
               onClick={confirmDeleteSection}
-              className="btn-primary justify-center"
+              className="btn-primary justify-center accent-shine"
             >
               Eliminar
             </button>

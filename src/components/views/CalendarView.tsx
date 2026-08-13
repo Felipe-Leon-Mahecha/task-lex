@@ -33,7 +33,7 @@ export default function CalendarView({ tasks }: { tasks: Task[] }) {
   const dayTasks = tasks.filter((t) => t.dueDate && sameDay(t.dueDate, selected))
 
   return (
-    <div className="rounded-[calc(var(--radius)*0.8)] border border-[var(--border)] bg-[rgba(18,18,18,0.75)] p-4 backdrop-blur-[6px]">
+    <div className="rounded-[calc(var(--radius)*0.8)] border border-[var(--border)] bg-[var(--surface)]/75 p-4 backdrop-blur-[6px]">
       <div className="mb-4 flex items-center justify-between">
         <button
           onClick={() => setMonth(new Date(year, m - 1, 1))}
@@ -71,13 +71,13 @@ export default function CalendarView({ tasks }: { tasks: Task[] }) {
                 isToday
                   ? 'border border-[var(--accent)]'
                   : isSelected
-                    ? 'bg-[var(--accent)] text-[#121212]'
+                    ? 'bg-[var(--accent)] text-[var(--accent-text,#121212)]'
                     : 'hover:bg-[var(--surface-2)]'
               }`}
             >
               <span>{day}</span>
               {hasOpen && (
-                <span className={`h-1 w-1 rounded-full ${isSelected ? 'bg-[#121212]' : 'bg-[var(--accent)]'}`} />
+                <span className={`h-1 w-1 rounded-full ${isSelected ? 'bg-[var(--accent-text,#121212)]' : 'bg-[var(--accent)]'}`} />
               )}
             </button>
           )

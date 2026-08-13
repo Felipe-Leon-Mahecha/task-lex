@@ -176,7 +176,7 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col overflow-y-auto bg-[#0c0c0c] text-[var(--text)] animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[60] flex flex-col overflow-y-auto bg-[var(--bg)] text-[var(--text)] animate-in fade-in duration-300">
       <div className="flex items-center justify-between px-5 py-4">
         <span className="eyebrow">Temporizador</span>
         <button
@@ -223,11 +223,11 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
 
         <div className="flex items-center gap-3">
           {running ? (
-            <button onClick={pause} className="btn-primary px-6 py-3 text-base">
+            <button onClick={pause} className="btn-primary px-6 py-3 text-base accent-shine">
               <Pause className="h-5 w-5" /> Pausar
             </button>
           ) : (
-            <button onClick={start} className="btn-primary px-6 py-3 text-base">
+            <button onClick={start} className="btn-primary px-6 py-3 text-base accent-shine">
               <Play className="h-5 w-5" /> Iniciar
             </button>
           )}
