@@ -265,7 +265,7 @@ export default function Settings() {
       <div className="card mb-4 max-w-lg p-5">
         <button
           onClick={() => setThemeModalOpen(true)}
-          className="btn-primary w-full accent-shine"
+          className="btn-primary w-full app-theme-shine"
         >
           <Palette className="h-4 w-4" /> Personalizar tema de la app
         </button>

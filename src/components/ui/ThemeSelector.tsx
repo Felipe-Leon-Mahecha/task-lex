@@ -145,30 +145,35 @@ export default function ThemeSelector() {
                         {isSelected && (
                           <Check className="absolute right-1.5 top-1.5 h-3.5 w-3.5 text-[var(--accent)]" />
                         )}
-                        <div
-                          className={`h-11 rounded-lg border p-1.5 ${theme.animationClass ?? ''}`}
-                          style={{
-                            backgroundColor: theme.animationClass ? undefined : theme.colors.bg,
-                            backgroundImage: !theme.animationClass && theme.bgGradient ? theme.bgGradient : undefined,
-                            backgroundSize: theme.bgGradient ? '220% 100%' : undefined,
-                            borderColor: theme.colors.border,
-                            ...(theme.animationClass
-                              ? ({
-                                  '--accent-gradient': theme.accentGradient,
-                                  '--accent-conic': theme.accentConic,
-                                } as React.CSSProperties)
-                              : {}),
-                          }}
-                        >
-                          <div
-                            className="h-1.5 w-3/5 rounded-full"
-                            style={{ backgroundColor: theme.animationClass ? 'rgba(255,255,255,0.55)' : theme.colors.surface2 }}
-                          />
-                          <div
-                            className="mt-1 h-1.5 w-2/5 rounded-full"
-                            style={{ backgroundColor: theme.animationClass ? 'rgba(255,255,255,0.35)' : theme.colors.textMuted }}
-                          />
-                        </div>
+                        {(() => {
+                          const isPremiumEffect = Boolean(theme.accentGradient || theme.accentConic)
+                          return (
+                            <div
+                              className={`h-11 rounded-lg border p-1.5 ${theme.animationClass ?? ''}`}
+                              style={{
+                                backgroundColor: isPremiumEffect ? undefined : theme.colors.bg,
+                                backgroundImage: isPremiumEffect ? undefined : theme.bgGradient,
+                                backgroundSize: theme.bgGradient ? '220% 100%' : undefined,
+                                borderColor: theme.colors.border,
+                                ...(isPremiumEffect
+                                  ? ({
+                                      '--accent-gradient': theme.accentGradient,
+                                      '--accent-conic': theme.accentConic,
+                                    } as React.CSSProperties)
+                                  : {}),
+                              }}
+                            >
+                              <div
+                                className="h-1.5 w-3/5 rounded-full"
+                                style={{ backgroundColor: isPremiumEffect ? 'rgba(255,255,255,0.55)' : theme.colors.surface2 }}
+                              />
+                              <div
+                                className="mt-1 h-1.5 w-2/5 rounded-full"
+                                style={{ backgroundColor: isPremiumEffect ? 'rgba(255,255,255,0.35)' : theme.colors.textMuted }}
+                              />
+                            </div>
+                          )
+                        })()}
                         <p className="mt-1.5 text-xs font-medium">{theme.name}</p>
                       </button>
                     )

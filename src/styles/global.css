@@ -354,6 +354,13 @@ h4 {
    eso elegir un acento borraba el tema de la app (y viceversa).
    ========================================================================== */
 
+/* Pastel — anima el propio gradiente puesto inline (bgGradient) tanto en
+   la miniatura del selector como en el fondo real de la app. */
+.pastel-shine {
+  background-size: 220% 100%;
+  animation: pastel-shine 16s ease-in-out infinite;
+}
+
 /* Oro y Plata — ACENTO exclusivo: solo en swatch/botones etiquetados,
    nunca cambia el fondo completo de la app. */
 .metal-sheen,
@@ -368,7 +375,7 @@ html.metal-sheen .accent-shine {
 /* Oro y Plata — TEMA DE LA APP: efecto real detrás de toda la app. */
 .app-metal-sheen,
 html.app-metal-sheen .btn-primary,
-html.app-metal-sheen .accent-shine {
+html.app-metal-sheen .app-theme-shine {
   background-image: var(--accent-gradient);
   background-size: 250% 100%;
   animation: metal-sheen 4s linear infinite;
@@ -431,7 +438,7 @@ html.diamond-spin .accent-shine::after {
    rápido a tamaño completo). */
 .app-diamond-spin,
 html.app-diamond-spin .btn-primary,
-html.app-diamond-spin .accent-shine {
+html.app-diamond-spin .app-theme-shine {
   position: relative;
   overflow: hidden;
   background-color: #c9dced;
@@ -443,7 +450,7 @@ html.app-diamond-spin .accent-shine {
 
 .app-diamond-spin::after,
 html.app-diamond-spin .btn-primary::after,
-html.app-diamond-spin .accent-shine::after {
+html.app-diamond-spin .app-theme-shine::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -509,7 +516,7 @@ html.prism-shift .accent-shine {
 /* Prisma — TEMA DE LA APP: efecto real detrás de toda la app. */
 .app-prism-shift,
 html.app-prism-shift .btn-primary,
-html.app-prism-shift .accent-shine {
+html.app-prism-shift .app-theme-shine {
   background-image: var(--accent-gradient);
   background-size: 300% 100%;
   animation: prism-shift 8s ease-in-out infinite;
@@ -545,6 +552,14 @@ html.app-prism-shift #root {
   background-image: var(--accent-gradient);
   background-size: 300% 100%;
   animation: aurora-flow 6s ease-in-out infinite;
+}
+
+html.aurora-flow .btn-primary,
+html.aurora-flow .app-theme-shine {
+  background-image: var(--accent-gradient);
+  background-size: 300% 100%;
+  animation: aurora-flow 6s ease-in-out infinite;
+  color: var(--accent-text, #041018);
 }
 
 @property --aurora-hue {
@@ -613,6 +628,7 @@ html.aurora-flow #root {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .pastel-shine,
   .metal-sheen,
   .app-metal-sheen,
   .diamond-spin,
@@ -625,19 +641,21 @@ html.aurora-flow #root {
   html.metal-sheen .btn-primary,
   html.metal-sheen .accent-shine,
   html.app-metal-sheen .btn-primary,
-  html.app-metal-sheen .accent-shine,
+  html.app-metal-sheen .app-theme-shine,
   html.diamond-spin .btn-primary,
   html.diamond-spin .accent-shine,
   html.diamond-spin .btn-primary::after,
   html.diamond-spin .accent-shine::after,
   html.app-diamond-spin .btn-primary,
-  html.app-diamond-spin .accent-shine,
+  html.app-diamond-spin .app-theme-shine,
   html.app-diamond-spin .btn-primary::after,
-  html.app-diamond-spin .accent-shine::after,
+  html.app-diamond-spin .app-theme-shine::after,
   html.prism-shift .btn-primary,
   html.prism-shift .accent-shine,
   html.app-prism-shift .btn-primary,
-  html.app-prism-shift .accent-shine,
+  html.app-prism-shift .app-theme-shine,
+  html.aurora-flow .btn-primary,
+  html.aurora-flow .app-theme-shine,
   html.aurora-flow body::before,
   html.aurora-flow body::after {
     animation: none;
