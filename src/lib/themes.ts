@@ -6,16 +6,9 @@ export type ThemeAnimationClass =
   | 'theme-pulse'
   | 'theme-glow'
   | 'pastel-shine'
-  | 'metal-sheen'
-  | 'diamond-spin'
-  | 'prism-shift'
-  | 'aurora-flow'
-  | 'app-metal-sheen'
-  | 'app-diamond-spin'
-  | 'app-prism-shift'
 
-export type AppThemeCategory = 'base' | 'pastel' | 'premium'
-export type AccentThemeCategory = 'base' | 'exclusive' | 'custom'
+export type AppThemeCategory = 'base' | 'pastel'
+export type AccentThemeCategory = 'base' | 'custom'
 
 export interface AppTheme {
   id: string
@@ -271,92 +264,6 @@ export const APP_THEMES: AppTheme[] = [
     },
     animationClass: 'pastel-shine',
   },
-  // Categoría Premium (5 temas)
-  {
-    id: 'plata',
-    name: 'Plata',
-    category: 'premium',
-    colors: {
-      bg: '#101114',
-      surface: '#17181c',
-      surface2: '#1f2126',
-      text: '#f1f2f4',
-      textMuted: '#a7abb3',
-      accent: '#c9ced6',
-      border: '#2a2c31',
-    },
-    accentGradient: 'linear-gradient(120deg, #c9ced6 0%, #f4f6f8 25%, #9ca3ad 50%, #f4f6f8 75%, #c9ced6 100%)',
-    accentText: '#1a1a1a',
-    animationClass: 'app-metal-sheen',
-  },
-  {
-    id: 'oro',
-    name: 'Oro',
-    category: 'premium',
-    colors: {
-      bg: '#120e08',
-      surface: '#1c150c',
-      surface2: '#241a0f',
-      text: '#f9f1e0',
-      textMuted: '#c9b085',
-      accent: '#d9a635',
-      border: '#372a16',
-    },
-    accentGradient: 'linear-gradient(120deg, #a8791f 0%, #f5d78e 20%, #fff3c4 35%, #d9a635 50%, #fff3c4 65%, #f5d78e 80%, #a8791f 100%)',
-    accentText: '#241a0a',
-    animationClass: 'app-metal-sheen',
-  },
-  {
-    id: 'diamante',
-    name: 'Diamante',
-    category: 'premium',
-    colors: {
-      bg: '#0a1014',
-      surface: '#10181d',
-      surface2: '#182229',
-      text: '#eef8fc',
-      textMuted: '#9fb9c4',
-      accent: '#dff4ff',
-      border: '#1e2c33',
-    },
-    accentConic: 'conic-gradient(from var(--angle), #dff4ff, #ffffff, #bfe8fb, #eafcff, #dff4ff)',
-    accentText: '#0a1014',
-    animationClass: 'app-diamond-spin',
-  },
-  {
-    id: 'prisma',
-    name: 'Prisma',
-    category: 'premium',
-    colors: {
-      bg: '#0f0f16',
-      surface: '#17171f',
-      surface2: '#1f1f2b',
-      text: '#f5f2fb',
-      textMuted: '#b3aec4',
-      accent: '#d3e0ff',
-      border: '#2a2836',
-    },
-    accentGradient: 'linear-gradient(115deg, #ffd3e0, #d3e0ff, #d3fff0, #fff3d3, #e3d3ff, #ffd3e0)',
-    accentText: '#1a1622',
-    animationClass: 'app-prism-shift',
-  },
-  {
-    id: 'aurora',
-    name: 'Aurora',
-    category: 'premium',
-    colors: {
-      bg: '#060912',
-      surface: '#0b1220',
-      surface2: '#101a2c',
-      text: '#eaf3fb',
-      textMuted: '#8fa3bd',
-      accent: '#38bdf8',
-      border: '#16213a',
-    },
-    accentGradient: 'linear-gradient(120deg, #0ee6b7, #38bdf8, #7c6ff0, #0ee6b7)',
-    accentText: '#041018',
-    animationClass: 'aurora-flow',
-  },
 ]
 
 export const ACCENT_THEMES: AccentTheme[] = [
@@ -433,46 +340,7 @@ export const ACCENT_THEMES: AccentTheme[] = [
       accentStrong: '#23A6A2',
     },
   },
-  // Categoría Exclusivo (3 premium + 1 personalizado)
-  {
-    id: 'plata-accent',
-    name: 'Plata',
-    category: 'exclusive',
-    colors: {
-      accent: '#c9ced6',
-      accentStrong: '#f4f6f8',
-    },
-    gradient: 'linear-gradient(120deg, #c9ced6 0%, #f4f6f8 25%, #9ca3ad 50%, #f4f6f8 75%, #c9ced6 100%)',
-    textColor: '#1a1a1a',
-    animationClass: 'metal-sheen',
-    unlockRequirement: { type: 'streak', value: 7 },
-  },
-  {
-    id: 'oro-accent',
-    name: 'Oro',
-    category: 'exclusive',
-    colors: {
-      accent: '#d9a635',
-      accentStrong: '#f5d78e',
-    },
-    gradient: 'linear-gradient(120deg, #a8791f 0%, #f5d78e 20%, #fff3c4 35%, #d9a635 50%, #fff3c4 65%, #f5d78e 80%, #a8791f 100%)',
-    textColor: '#241a0a',
-    animationClass: 'metal-sheen',
-    unlockRequirement: { type: 'streak', value: 30 },
-  },
-  {
-    id: 'diamante-accent',
-    name: 'Diamante',
-    category: 'exclusive',
-    colors: {
-      accent: '#dff4ff',
-      accentStrong: '#ffffff',
-    },
-    conic: 'conic-gradient(from var(--angle), #dff4ff, #ffffff, #bfe8fb, #eafcff, #dff4ff)',
-    textColor: '#0a1014',
-    animationClass: 'diamond-spin',
-    unlockRequirement: { type: 'streak', value: 60 },
-  },
+  // Categoría Personalizado
   {
     id: 'custom',
     name: 'Personalizado',
@@ -494,8 +362,10 @@ export function applyAppTheme(appThemeId: string) {
   root.style.setProperty('--surface-2', theme.colors.surface2)
   root.style.setProperty('--text', theme.colors.text)
   root.style.setProperty('--text-muted', theme.colors.textMuted)
-  root.style.setProperty('--accent', theme.colors.accent)
   root.style.setProperty('--border', theme.colors.border)
+  // NOTA: a propósito NO se toca --accent aquí. El Tema de la app nunca
+  // debe cambiar el Color de acento que el usuario eligió por separado —
+  // antes lo pisaba silenciosamente porque ambos escribían la misma variable.
 
   // Apply bg gradient for pastel themes
   if (theme.bgGradient) {
@@ -507,32 +377,8 @@ export function applyAppTheme(appThemeId: string) {
     root.style.removeProperty('--bg-gradient-animation')
   }
 
-  // Apply accent gradient/conic for premium themes
-  if (theme.accentGradient) {
-    root.style.setProperty('--accent-gradient', theme.accentGradient)
-    root.style.setProperty('--accent-gradient-size', '250% 100%')
-  } else if (theme.accentConic) {
-    root.style.setProperty('--accent-conic', theme.accentConic)
-  } else {
-    root.style.removeProperty('--accent-gradient')
-    root.style.removeProperty('--accent-conic')
-  }
-
-  if (theme.accentText) {
-    root.style.setProperty('--accent-text', theme.accentText)
-  } else {
-    root.style.removeProperty('--accent-text')
-  }
-
-  // Apply animation class — solo clases de nivel APP, nunca toca las de Acento
-  const APP_ANIMATION_CLASSES: ThemeAnimationClass[] = [
-    'pastel-shine',
-    'app-metal-sheen',
-    'app-diamond-spin',
-    'app-prism-shift',
-    'aurora-flow',
-  ]
-  root.classList.remove(...APP_ANIMATION_CLASSES)
+  // Apply animation class
+  root.classList.remove('pastel-shine')
   if (theme.animationClass) {
     root.classList.add(theme.animationClass)
   }
@@ -546,28 +392,7 @@ export function applyAccentTheme(accentThemeId: string) {
   root.style.setProperty('--accent', theme.colors.accent)
   root.style.setProperty('--accent-strong', theme.colors.accentStrong)
 
-  // Apply gradient for exclusive themes
-  if (theme.gradient) {
-    root.style.setProperty('--accent-gradient', theme.gradient)
-    root.style.setProperty('--accent-gradient-size', '250% 100%')
-  } else if (theme.conic) {
-    root.style.setProperty('--accent-conic', theme.conic)
-  } else {
-    root.style.removeProperty('--accent-gradient')
-    root.style.removeProperty('--accent-gradient-size')
-    root.style.removeProperty('--accent-conic')
-  }
-
-  // Apply text color for exclusive themes
-  if (theme.textColor) {
-    root.style.setProperty('--accent-text', theme.textColor)
-  } else {
-    root.style.removeProperty('--accent-text')
-  }
-
-  // Apply animation class — solo clases de nivel ACENTO, nunca toca las de App Theme
-  const ACCENT_ANIMATION_CLASSES: ThemeAnimationClass[] = ['metal-sheen', 'diamond-spin']
-  root.classList.remove(...ACCENT_ANIMATION_CLASSES)
+  // Apply animation class
   if (theme.animationClass) {
     root.classList.add(theme.animationClass)
   }
