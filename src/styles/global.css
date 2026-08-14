@@ -164,6 +164,14 @@ h4 {
   initial-value: 135deg;
 }
 
+/* --angle registrada para poder animar el ángulo de un conic-gradient
+   (Diamante usa esto en el conic de respaldo). */
+@property --angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
 @keyframes shine-rotate {
   0% {
     --shine-angle: 45deg;
@@ -185,10 +193,28 @@ h4 {
   50% { background-position: 100% 50%; }
 }
 
-/* Metal sheen - para Plata y Oro */
+/* Metal sheen - para Plata y Oro (Tema de la app y Acento) */
 @keyframes metal-sheen {
   0% { background-position: 0% 50%; }
   100% { background-position: 200% 50%; }
+}
+
+/* Diamond spin - gira el ángulo del conic-gradient de respaldo de Diamante */
+@keyframes diamond-spin {
+  to { --angle: 360deg; }
+}
+
+/* Prism shift - para Prisma */
+@keyframes prism-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Aurora flow - shimmer simple de respaldo (la escena real con cintas está más abajo) */
+@keyframes aurora-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* Oro: onda diagonal que además rota de dirección con el tiempo */
@@ -328,6 +354,301 @@ h4 {
   .pastel-shine {
     animation: none;
     background-position: 50% 50%;
+  }
+}
+
+/* ==========================================================================
+   TEMAS PREMIUM (Tema de la app) Y EXCLUSIVOS (Color de acento)
+   Dos sistemas de clases DELIBERADAMENTE separados y sin punto de contacto:
+   - Acento exclusivo:        'metal-sheen', 'diamond-spin'
+   - Tema de la app Premium:  'app-metal-sheen', 'app-diamond-spin',
+                               'app-prism-shift', 'aurora-flow'
+   Cada uno solo cascada a SU PROPIA clase utilitaria dedicada
+   ('.accent-shine' para Acento, '.app-theme-shine' para Tema de la app)
+   y NUNCA a '.btn-primary' — esa fue la causa del bug anterior: dos
+   reglas con la misma especificidad peleando por el mismo botón cuando
+   Acento y Tema de la app estaban activos al mismo tiempo.
+   ========================================================================== */
+
+/* ---------- Oro y Plata — ACENTO exclusivo ---------- */
+.metal-sheen,
+html.metal-sheen .accent-shine {
+  background-image: var(--accent-gradient);
+  background-size: 250% 100%;
+  animation: metal-sheen 4s linear infinite;
+  color: var(--accent-text, #121212);
+}
+
+/* ---------- Oro y Plata — TEMA DE LA APP ---------- */
+.app-metal-sheen,
+html.app-metal-sheen .app-theme-shine {
+  background-image: var(--app-accent-gradient);
+  background-size: 250% 100%;
+  animation: metal-sheen 4s linear infinite;
+  color: var(--app-accent-text, #121212);
+}
+
+html.app-metal-sheen body::before {
+  content: '';
+  position: fixed;
+  inset: -10%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.3;
+  mix-blend-mode: overlay;
+  background-image: var(--app-accent-gradient);
+  background-size: 250% 100%;
+  animation: metal-sheen 4s linear infinite;
+}
+
+html.app-metal-sheen #root {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+/* ---------- Diamante — ACENTO exclusivo ----------
+   Facetas irregulares de verdad (patrón SVG, no un repeat uniforme)
+   + una pasada de brillo diagonal que se desliza encima. */
+.diamond-spin,
+html.diamond-spin .accent-shine {
+  position: relative;
+  overflow: hidden;
+  background-color: #c9dced;
+  background-repeat: repeat;
+  background-size: 90px 90px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Crect width='90' height='90' fill='%23dceefa'/%3E%3Cpolygon points='0,0 26,6 10,29' fill='%23eef5fb'/%3E%3Cpolygon points='26,6 45,0 36,23 10,29' fill='%23c9dced'/%3E%3Cpolygon points='45,0 90,0 71,19 36,23' fill='%23bfe0f5'/%3E%3Cpolygon points='71,19 90,0 90,35 61,39' fill='%23eef5fb'/%3E%3Cpolygon points='10,29 36,23 61,39 39,55' fill='%23a9cbe6'/%3E%3Cpolygon points='36,23 71,19 61,39' fill='%23ffffff'/%3E%3Cpolygon points='61,39 90,35 90,71 65,61' fill='%23c9dced'/%3E%3Cpolygon points='39,55 61,39 65,61 42,77' fill='%23eef5fb'/%3E%3Cpolygon points='0,29 10,29 39,55 13,71 0,58' fill='%23bfe0f5'/%3E%3Cpolygon points='13,71 39,55 42,77 19,90 0,90 0,58' fill='%23a9cbe6'/%3E%3Cpolygon points='42,77 65,61 90,71 90,90 19,90' fill='%23ffffff'/%3E%3C/svg%3E");
+  color: var(--accent-text, #0a1014);
+}
+
+.diamond-spin::after,
+html.diamond-spin .accent-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    var(--shine-angle, 135deg),
+    transparent 35%,
+    rgba(255, 255, 255, 0.85) 50%,
+    transparent 65%
+  );
+  background-size: 260% 260%;
+  animation: shine-rotate 6s ease-in-out infinite;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* ---------- Diamante — TEMA DE LA APP ----------
+   Mismas facetas; a escala completa de pantalla el brillo va más lento
+   (14s en vez de 6s) para que no se sienta frenético. */
+.app-diamond-spin,
+html.app-diamond-spin .app-theme-shine {
+  position: relative;
+  overflow: hidden;
+  background-color: #c9dced;
+  background-repeat: repeat;
+  background-size: 90px 90px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Crect width='90' height='90' fill='%23dceefa'/%3E%3Cpolygon points='0,0 26,6 10,29' fill='%23eef5fb'/%3E%3Cpolygon points='26,6 45,0 36,23 10,29' fill='%23c9dced'/%3E%3Cpolygon points='45,0 90,0 71,19 36,23' fill='%23bfe0f5'/%3E%3Cpolygon points='71,19 90,0 90,35 61,39' fill='%23eef5fb'/%3E%3Cpolygon points='10,29 36,23 61,39 39,55' fill='%23a9cbe6'/%3E%3Cpolygon points='36,23 71,19 61,39' fill='%23ffffff'/%3E%3Cpolygon points='61,39 90,35 90,71 65,61' fill='%23c9dced'/%3E%3Cpolygon points='39,55 61,39 65,61 42,77' fill='%23eef5fb'/%3E%3Cpolygon points='0,29 10,29 39,55 13,71 0,58' fill='%23bfe0f5'/%3E%3Cpolygon points='13,71 39,55 42,77 19,90 0,90 0,58' fill='%23a9cbe6'/%3E%3Cpolygon points='42,77 65,61 90,71 90,90 19,90' fill='%23ffffff'/%3E%3C/svg%3E");
+  color: var(--app-accent-text, #0a1014);
+}
+
+.app-diamond-spin::after,
+html.app-diamond-spin .app-theme-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    var(--shine-angle, 135deg),
+    transparent 35%,
+    rgba(255, 255, 255, 0.85) 50%,
+    transparent 65%
+  );
+  background-size: 260% 260%;
+  animation: shine-rotate 14s ease-in-out infinite;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+html.app-diamond-spin body::before {
+  content: '';
+  position: fixed;
+  inset: -10%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.4;
+  background-color: #c9dced;
+  background-repeat: repeat;
+  background-size: 90px 90px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Crect width='90' height='90' fill='%23dceefa'/%3E%3Cpolygon points='0,0 26,6 10,29' fill='%23eef5fb'/%3E%3Cpolygon points='26,6 45,0 36,23 10,29' fill='%23c9dced'/%3E%3Cpolygon points='45,0 90,0 71,19 36,23' fill='%23bfe0f5'/%3E%3Cpolygon points='71,19 90,0 90,35 61,39' fill='%23eef5fb'/%3E%3Cpolygon points='10,29 36,23 61,39 39,55' fill='%23a9cbe6'/%3E%3Cpolygon points='36,23 71,19 61,39' fill='%23ffffff'/%3E%3Cpolygon points='61,39 90,35 90,71 65,61' fill='%23c9dced'/%3E%3Cpolygon points='39,55 61,39 65,61 42,77' fill='%23eef5fb'/%3E%3Cpolygon points='0,29 10,29 39,55 13,71 0,58' fill='%23bfe0f5'/%3E%3Cpolygon points='13,71 39,55 42,77 19,90 0,90 0,58' fill='%23a9cbe6'/%3E%3Cpolygon points='42,77 65,61 90,71 90,90 19,90' fill='%23ffffff'/%3E%3C/svg%3E");
+}
+
+html.app-diamond-spin body::after {
+  content: '';
+  position: fixed;
+  inset: -10%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: linear-gradient(
+    var(--shine-angle, 135deg),
+    transparent 35%,
+    rgba(255, 255, 255, 0.85) 50%,
+    transparent 65%
+  );
+  background-size: 260% 260%;
+  animation: shine-rotate 14s ease-in-out infinite;
+}
+
+html.app-diamond-spin #root {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+/* ---------- Prisma — ACENTO exclusivo ---------- */
+.prism-shift,
+html.prism-shift .accent-shine {
+  background-image: var(--accent-gradient);
+  background-size: 300% 100%;
+  animation: prism-shift 8s ease-in-out infinite;
+  color: var(--accent-text, #1a1622);
+}
+
+/* ---------- Prisma — TEMA DE LA APP ---------- */
+.app-prism-shift,
+html.app-prism-shift .app-theme-shine {
+  background-image: var(--app-accent-gradient);
+  background-size: 300% 100%;
+  animation: prism-shift 8s ease-in-out infinite;
+  color: var(--app-accent-text, #1a1622);
+}
+
+html.app-prism-shift body::before {
+  content: '';
+  position: fixed;
+  inset: -10%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  background-image: var(--app-accent-gradient);
+  background-size: 300% 100%;
+  animation: prism-shift 8s ease-in-out infinite;
+}
+
+html.app-prism-shift #root {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+/* ---------- Aurora — solo existe como TEMA DE LA APP ----------
+   (no hay Aurora en Acento, por eso el nombre no lleva prefijo app-).
+   Fondo azul noche fijo + dos capas de "cintas" curvas (skew + translate)
+   que ondulan y cambian de tono con hue-rotate — no manchas circulares
+   quietas. Además una versión compacta .aurora-flow para la miniatura
+   del selector. */
+.aurora-flow {
+  background-image: var(--app-accent-gradient);
+  background-size: 300% 100%;
+  animation: aurora-flow 6s ease-in-out infinite;
+}
+
+html.aurora-flow .app-theme-shine {
+  background-image: var(--app-accent-gradient);
+  background-size: 300% 100%;
+  animation: aurora-flow 6s ease-in-out infinite;
+  color: var(--app-accent-text, #041018);
+}
+
+@property --aurora-hue {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+html.aurora-flow body {
+  position: relative;
+  overflow-x: hidden;
+}
+
+html.aurora-flow body::before,
+html.aurora-flow body::after {
+  content: '';
+  position: fixed;
+  inset: -15%;
+  z-index: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+html.aurora-flow body::before {
+  background-image:
+    radial-gradient(ellipse 20% 140% at 28% 40%, rgba(46, 230, 183, 0.55), transparent 65%),
+    radial-gradient(ellipse 16% 130% at 55% 55%, rgba(56, 189, 248, 0.5), transparent 65%);
+  filter: blur(14px) hue-rotate(var(--aurora-hue));
+  animation:
+    aurora-drift-a 12s ease-in-out infinite alternate,
+    aurora-hue-shift 18s ease-in-out infinite;
+}
+
+html.aurora-flow body::after {
+  background-image:
+    radial-gradient(ellipse 18% 150% at 68% 45%, rgba(124, 111, 240, 0.5), transparent 65%),
+    radial-gradient(ellipse 14% 120% at 45% 28%, rgba(14, 230, 183, 0.4), transparent 65%);
+  filter: blur(16px) hue-rotate(var(--aurora-hue));
+  animation:
+    aurora-drift-b 15s ease-in-out infinite alternate,
+    aurora-hue-shift 22s ease-in-out infinite reverse;
+}
+
+html.aurora-flow #root {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+@keyframes aurora-drift-a {
+  0% { transform: translateX(-6%) skewX(-6deg) scaleY(1); }
+  50% { transform: translateX(4%) skewX(3deg) scaleY(1.08); }
+  100% { transform: translateX(-6%) skewX(-6deg) scaleY(1); }
+}
+
+@keyframes aurora-drift-b {
+  0% { transform: translateX(6%) skewX(5deg) scaleY(1.05); }
+  50% { transform: translateX(-5%) skewX(-4deg) scaleY(0.95); }
+  100% { transform: translateX(6%) skewX(5deg) scaleY(1.05); }
+}
+
+@keyframes aurora-hue-shift {
+  0% { --aurora-hue: 0deg; }
+  50% { --aurora-hue: 35deg; }
+  100% { --aurora-hue: 0deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .metal-sheen,
+  .app-metal-sheen,
+  .diamond-spin,
+  .diamond-spin::after,
+  .app-diamond-spin,
+  .app-diamond-spin::after,
+  .prism-shift,
+  .app-prism-shift,
+  .aurora-flow,
+  html.metal-sheen .accent-shine,
+  html.app-metal-sheen .app-theme-shine,
+  html.diamond-spin .accent-shine,
+  html.diamond-spin .accent-shine::after,
+  html.app-diamond-spin .app-theme-shine,
+  html.app-diamond-spin .app-theme-shine::after,
+  html.prism-shift .accent-shine,
+  html.app-prism-shift .app-theme-shine,
+  html.aurora-flow .app-theme-shine,
+  html.aurora-flow body::before,
+  html.aurora-flow body::after {
+    animation: none;
   }
 }
 
