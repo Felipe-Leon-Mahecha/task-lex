@@ -83,7 +83,7 @@ export default function Header() {
                 signOut()
                 setLogoutOpen(false)
               }}
-              className="btn-primary justify-center accent-shine"
+              className="btn-primary justify-center"
             >
               Cerrar sesión
             </button>
