@@ -152,7 +152,7 @@ export default function Tutorial() {
           >
             Omitir tutorial
           </button>
-          <button onClick={handleNext} className="btn-primary accent-shine">
+          <button onClick={handleNext} className="btn-primary">
             {step + 1 >= steps.length ? 'Finalizar' : 'Siguiente'}
           </button>
         </div>

@@ -223,11 +223,11 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
 
         <div className="flex items-center gap-3">
           {running ? (
-            <button onClick={pause} className="btn-primary px-6 py-3 text-base accent-shine">
+            <button onClick={pause} className="btn-primary px-6 py-3 text-base">
               <Pause className="h-5 w-5" /> Pausar
             </button>
           ) : (
-            <button onClick={start} className="btn-primary px-6 py-3 text-base accent-shine">
+            <button onClick={start} className="btn-primary px-6 py-3 text-base">
               <Play className="h-5 w-5" /> Iniciar
             </button>
           )}

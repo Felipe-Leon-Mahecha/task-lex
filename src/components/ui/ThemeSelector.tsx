@@ -1,4 +1,4 @@
-import { Check, Lock, Sparkles } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useSettingsStore } from '../../store/settings'
 import { useTasksStore } from '../../store/tasks'
@@ -63,7 +63,6 @@ export default function ThemeSelector() {
     const categories: Record<AppThemeCategory, typeof APP_THEMES> = {
       base: [],
       pastel: [],
-      premium: [],
     }
     APP_THEMES.forEach((theme) => {
       categories[theme.category].push(theme)
@@ -75,7 +74,6 @@ export default function ThemeSelector() {
   const accentThemesByCategory = useMemo(() => {
     const categories: Record<AccentThemeCategory, any[]> = {
       base: [],
-      exclusive: [],
       custom: [],
     }
     availableAccentThemes.forEach((theme) => {
@@ -87,8 +85,6 @@ export default function ThemeSelector() {
   const categoryLabels: Record<AppThemeCategory | AccentThemeCategory, string> = {
     base: 'Base',
     pastel: 'Pastel',
-    premium: 'Premium',
-    exclusive: 'Exclusivo',
     custom: 'Personalizado',
   }
 
@@ -134,11 +130,6 @@ export default function ThemeSelector() {
                 <div className="grid grid-cols-3 gap-2.5">
                   {themes.map((theme) => {
                     const isSelected = appThemeId === theme.id
-                    // Premium (Plata/Oro/Diamante/Prisma/Aurora) usa la clase
-                    // CSS de animación para pintarse — no bgGradient/color sólido.
-                    // Pastel SÍ usa su propio bgGradient (además de la clase
-                    // pastel-shine, que solo le da el shimmer, no el color).
-                    const isPremiumEffect = Boolean(theme.accentGradient || theme.accentConic)
                     return (
                       <button
                         key={theme.id}
@@ -153,25 +144,19 @@ export default function ThemeSelector() {
                         <div
                           className={`h-11 rounded-lg border p-1.5 ${theme.animationClass ?? ''}`}
                           style={{
-                            backgroundColor: isPremiumEffect ? undefined : theme.colors.bg,
-                            backgroundImage: isPremiumEffect ? undefined : theme.bgGradient,
+                            backgroundColor: theme.colors.bg,
+                            backgroundImage: theme.bgGradient,
                             backgroundSize: theme.bgGradient ? '220% 100%' : undefined,
                             borderColor: theme.colors.border,
-                            ...(isPremiumEffect
-                              ? ({
-                                  '--app-accent-gradient': theme.accentGradient,
-                                  '--app-accent-conic': theme.accentConic,
-                                } as React.CSSProperties)
-                              : {}),
                           }}
                         >
                           <div
                             className="h-1.5 w-3/5 rounded-full"
-                            style={{ backgroundColor: isPremiumEffect ? 'rgba(255,255,255,0.55)' : theme.colors.surface2 }}
+                            style={{ backgroundColor: theme.colors.surface2 }}
                           />
                           <div
                             className="mt-1 h-1.5 w-2/5 rounded-full"
-                            style={{ backgroundColor: isPremiumEffect ? 'rgba(255,255,255,0.35)' : theme.colors.textMuted }}
+                            style={{ backgroundColor: theme.colors.textMuted }}
                           />
                         </div>
                         <p className="mt-1.5 text-xs font-medium">{theme.name}</p>
@@ -199,7 +184,6 @@ export default function ThemeSelector() {
                 <div className="grid grid-cols-3 gap-2.5">
                   {themes.map((theme) => {
                     const isSelected = accentThemeId === theme.id
-                    const isLocked = !theme.isUnlocked && theme.category !== 'base' && theme.category !== 'custom'
 
                     // Custom color picker
                     if (theme.category === 'custom') {
@@ -242,48 +226,22 @@ export default function ThemeSelector() {
                       <button
                         key={theme.id}
                         onClick={() => handleAccentThemeChange(theme.id)}
-                        disabled={isLocked}
-                        className={`relative rounded-xl border p-2 text-left transition-colors ${
-                          isLocked
-                            ? 'cursor-not-allowed border-[var(--border)] opacity-55'
-                            : isSelected
-                              ? 'border-[var(--accent)]'
-                              : 'border-[var(--border)] hover:border-[var(--border-strong)]'
+                        className={`rounded-xl border p-2 text-left transition-colors ${
+                          isSelected
+                            ? 'border-[var(--accent)]'
+                            : 'border-[var(--border)] hover:border-[var(--border-strong)]'
                         }`}
                       >
-                        {isSelected && !isLocked && (
+                        {isSelected && (
                           <Check className="absolute right-1.5 top-1.5 h-3.5 w-3.5 text-[var(--accent)]" />
                         )}
                         <div
-                          className={theme.animationClass ? `h-9 rounded-lg ${theme.animationClass}` : 'h-9 rounded-lg'}
+                          className="h-9 rounded-lg"
                           style={{
-                            backgroundColor: theme.animationClass ? undefined : theme.colors.accent,
-                            ...(theme.animationClass
-                              ? ({
-                                  '--accent-gradient': theme.gradient,
-                                  '--accent-conic': theme.conic,
-                                } as React.CSSProperties)
-                              : {}),
+                            backgroundColor: theme.colors.accent,
                           }}
                         />
                         <p className="mt-1.5 text-xs font-medium">{theme.name}</p>
-                        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
-                          {isLocked && theme.unlockRequirement ? (
-                            <>
-                              <Lock className="h-2.5 w-2.5" />
-                              {theme.unlockRequirement.type === 'tasks'
-                                ? `${theme.unlockRequirement.value} tareas`
-                                : `${theme.unlockRequirement.value} días racha`}
-                            </>
-                          ) : theme.category === 'base' ? (
-                            'Base'
-                          ) : (
-                            <>
-                              <Sparkles className="h-2.5 w-2.5" />
-                              Exclusivo
-                            </>
-                          )}
-                        </div>
                       </button>
                     )
                   })}

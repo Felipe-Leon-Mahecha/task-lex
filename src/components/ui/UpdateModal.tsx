@@ -125,7 +125,7 @@ export default function UpdateModal({ onClose, forceOpen }: UpdateModalProps) {
 
         <button
           onClick={handleClose}
-          className="btn-primary mt-6 w-full accent-shine"
+          className="btn-primary mt-6 w-full"
         >
           ¡Genial!
         </button>
