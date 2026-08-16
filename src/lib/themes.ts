@@ -24,9 +24,6 @@ export interface AppTheme {
     border: string
   }
   bgGradient?: string
-  accentGradient?: string
-  accentConic?: string
-  accentText?: string
   animationClass?: ThemeAnimationClass
   isDefault?: boolean
 }
@@ -39,15 +36,6 @@ export interface AccentTheme {
     accent: string
     accentStrong: string
   }
-  gradient?: string
-  conic?: string
-  textColor?: string
-  animationClass?: ThemeAnimationClass
-  unlockRequirement?: {
-    type: 'tasks' | 'streak'
-    value: number
-  }
-  isUnlocked?: boolean
 }
 
 export const APP_THEMES: AppTheme[] = [
@@ -388,27 +376,9 @@ export function applyAccentTheme(accentThemeId: string) {
   const root = document.documentElement
   root.style.setProperty('--accent', theme.colors.accent)
   root.style.setProperty('--accent-strong', theme.colors.accentStrong)
-
-  // Apply animation class
-  if (theme.animationClass) {
-    root.classList.add(theme.animationClass)
-  }
 }
 
 export function applyTheme(appThemeId: string, accentThemeId: string) {
   applyAppTheme(appThemeId)
   applyAccentTheme(accentThemeId)
-}
-
-export function checkAccentThemeUnlocks(completedTasks: number, currentStreak: number, userEmail?: string): AccentTheme[] {
-  const isPremiumUser = userEmail === 'fmleonm19@gmail.com'
-
-  return ACCENT_THEMES.map((theme) => ({
-    ...theme,
-    isUnlocked: isPremiumUser || theme.category === 'base' || theme.category === 'custom'
-      ? true
-      : theme.unlockRequirement?.type === 'tasks'
-        ? completedTasks >= theme.unlockRequirement.value
-        : currentStreak >= (theme.unlockRequirement?.value || 0),
-  }))
 }

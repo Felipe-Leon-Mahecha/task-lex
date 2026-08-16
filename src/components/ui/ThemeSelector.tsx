@@ -1,49 +1,16 @@
 import { Check } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useSettingsStore } from '../../store/settings'
-import { useTasksStore } from '../../store/tasks'
-import { useAuthStore } from '../../store/auth'
-import { APP_THEMES, checkAccentThemeUnlocks, applyAppTheme, applyAccentTheme } from '../../lib/themes'
+import { APP_THEMES, ACCENT_THEMES, applyAppTheme, applyAccentTheme } from '../../lib/themes'
 import type { AppThemeCategory, AccentThemeCategory } from '../../lib/themes'
-
-function startOfDay(d: Date) {
-  const x = new Date(d)
-  x.setHours(0, 0, 0, 0)
-  return x
-}
-
-function sameDay(a: Date, b: Date) {
-  const x = startOfDay(a)
-  const y = startOfDay(b)
-  return x.getTime() === y.getTime()
-}
 
 export default function ThemeSelector() {
   const appThemeId = useSettingsStore((s) => s.appThemeId)
   const accentThemeId = useSettingsStore((s) => s.accentThemeId)
   const setAppThemeId = useSettingsStore((s) => s.setAppThemeId)
   const setAccentThemeId = useSettingsStore((s) => s.setAccentThemeId)
-  const user = useAuthStore((s) => s.user)
 
   const [activeTab, setActiveTab] = useState<'app' | 'accent'>('app')
-
-  const tasks = useTasksStore((s) => s.tasks)
-  const completedTasks = tasks.filter((t) => t.status === 'done').length
-
-  // Calculate current streak (same logic as Dashboard)
-  const currentStreak = useMemo(() => {
-    const doneOnDay = (d: Date) => tasks.some((t) => t.status === 'done' && t.completedAt && sameDay(t.completedAt, d))
-    let streak = 0
-    const cursor = startOfDay(new Date())
-    if (!doneOnDay(cursor)) cursor.setDate(cursor.getDate() - 1)
-    while (doneOnDay(cursor)) {
-      streak++
-      cursor.setDate(cursor.getDate() - 1)
-    }
-    return streak
-  }, [tasks])
-
-  const availableAccentThemes = checkAccentThemeUnlocks(completedTasks, currentStreak, user?.email || undefined)
 
   const handleAppThemeChange = (themeId: string) => {
     setAppThemeId(themeId)
@@ -51,11 +18,8 @@ export default function ThemeSelector() {
   }
 
   const handleAccentThemeChange = (themeId: string) => {
-    const theme = availableAccentThemes.find((t) => t.id === themeId)
-    if (theme && (theme.isUnlocked || theme.category === 'base' || theme.category === 'custom')) {
-      setAccentThemeId(themeId)
-      applyAccentTheme(themeId)
-    }
+    setAccentThemeId(themeId)
+    applyAccentTheme(themeId)
   }
 
   // Group app themes by category
@@ -72,15 +36,15 @@ export default function ThemeSelector() {
 
   // Group accent themes by category
   const accentThemesByCategory = useMemo(() => {
-    const categories: Record<AccentThemeCategory, any[]> = {
+    const categories: Record<AccentThemeCategory, typeof ACCENT_THEMES> = {
       base: [],
       custom: [],
     }
-    availableAccentThemes.forEach((theme) => {
+    ACCENT_THEMES.forEach((theme) => {
       categories[theme.category].push(theme)
     })
     return categories
-  }, [availableAccentThemes])
+  }, [])
 
   const categoryLabels: Record<AppThemeCategory | AccentThemeCategory, string> = {
     base: 'Base',
