@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Sparkles, Mic, MicOff, Check, X, Loader2, ChevronDown } from 'lucide-react'
+import { Mic, MicOff, Check, X, Loader2, ChevronDown } from 'lucide-react'
 import { parseTaskWithAI, type ParsedTask } from '../../lib/ai'
 import { isVoiceRecognitionSupported, startVoiceRecognition } from '../../lib/voice'
 import { useSectionsStore } from '../../store/sections'
@@ -7,6 +7,25 @@ import { useTasksStore } from '../../store/tasks'
 import { createTask } from '../../lib/tasks'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+
+function FoxIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" fill="none" className={className}>
+      <path d="M8 8L20 28L8 52C8 52 4 36 8 20L8 8Z" fill="#D97706" />
+      <path d="M56 8L44 28L56 52C56 52 60 36 56 20L56 8Z" fill="#D97706" />
+      <path d="M12 14L20 28L12 44C12 44 10 34 12 22L12 14Z" fill="#FDE68A" />
+      <path d="M52 14L44 28L52 44C52 44 54 34 52 22L52 14Z" fill="#FDE68A" />
+      <ellipse cx="32" cy="38" rx="20" ry="18" fill="#EA580C" />
+      <ellipse cx="32" cy="42" rx="14" ry="11" fill="#FEF3C7" />
+      <circle cx="24" cy="32" r="3.5" fill="#1C1917" />
+      <circle cx="40" cy="32" r="3.5" fill="#1C1917" />
+      <circle cx="25" cy="31" r="1.2" fill="white" />
+      <circle cx="41" cy="31" r="1.2" fill="white" />
+      <ellipse cx="32" cy="39" rx="3" ry="2.2" fill="#1C1917" />
+      <path d="M29 42Q32 45 35 42" stroke="#1C1917" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+    </svg>
+  )
+}
 
 export default function FoxPanel() {
   const [open, setOpen] = useState(false)
@@ -132,10 +151,10 @@ export default function FoxPanel() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--bg)] shadow-lg transition-transform hover:scale-110 active:scale-95 md:bottom-6"
+        className="fixed bottom-20 right-2 z-50 transition-transform hover:scale-110 active:scale-95 md:bottom-6 md:right-4"
         aria-label="Fox - Agregar rápido"
       >
-        <Sparkles className="h-6 w-6" />
+        <FoxIcon className="h-16 w-16 drop-shadow-lg md:h-14 md:w-14" />
       </button>
 
       {open && (
@@ -155,7 +174,7 @@ export default function FoxPanel() {
               <>
                 <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">🦊</span>
+                    <FoxIcon className="h-6 w-6" />
                     <span className="text-sm font-semibold">Fox</span>
                     <span className="text-[11px] text-[var(--text-muted)]">asistente rápido</span>
                   </div>
@@ -226,9 +245,7 @@ export default function FoxPanel() {
                     >
                       {loading ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3.5 w-3.5" />
-                      )}
+                      ) : null}
                       {loading ? 'Fox pensando...' : 'Analizar'}
                     </button>
                   </div>
