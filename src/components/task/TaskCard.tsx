@@ -259,54 +259,54 @@ export default memo(function TaskCard({
 
       {moveOpen && onMove && <MoveTaskModal open={moveOpen} onClose={() => setMoveOpen(false)} currentId={task.id} onMove={(sectionId) => onMove(task.id, sectionId)} />}
       {quickMenuOpen && (
-        <Modal open={quickMenuOpen} onClose={() => setQuickMenuOpen(false)} title="Acciones rápidas">
-          <div className="space-y-2">
+        <Modal open={quickMenuOpen} onClose={() => setQuickMenuOpen(false)} title="Acciones rápidas" className="max-w-xs">
+          <div className="space-y-1">
             <button
               onClick={() => { onEdit(task); setQuickMenuOpen(false); }}
-              className="w-full rounded-lg p-3 text-left text-sm hover:bg-[var(--surface-2)]"
+              className="w-full rounded-lg p-2.5 text-left text-xs hover:bg-[var(--surface-2)]"
             >
-              ✏️ Editar tarea
+              Editar tarea
             </button>
             <button
               onClick={() => { onToggle(task.id); setQuickMenuOpen(false); }}
-              className="w-full rounded-lg p-3 text-left text-sm hover:bg-[var(--surface-2)]"
+              className="w-full rounded-lg p-2.5 text-left text-xs hover:bg-[var(--surface-2)]"
             >
-              ✅ {task.status === 'done' ? 'Marcar pendiente' : 'Completar'}
+              {task.status === 'done' ? 'Marcar pendiente' : 'Completar'}
             </button>
             {onDuplicate && (
               <button
                 onClick={() => { onDuplicate(task); setQuickMenuOpen(false); }}
-                className="w-full rounded-lg p-3 text-left text-sm hover:bg-[var(--surface-2)]"
+                className="w-full rounded-lg p-2.5 text-left text-xs hover:bg-[var(--surface-2)]"
               >
-                📋 Duplicar
+                Duplicar
               </button>
             )}
             {onMove && (
               <button
                 onClick={() => { setMoveOpen(true); setQuickMenuOpen(false); }}
-                className="w-full rounded-lg p-3 text-left text-sm hover:bg-[var(--surface-2)]"
+                className="w-full rounded-lg p-2.5 text-left text-xs hover:bg-[var(--surface-2)]"
               >
-                ➡️ Mover a otro apartado
+                Mover a otro apartado
               </button>
             )}
             <button
               onClick={() => { onArchive(task.id); setQuickMenuOpen(false); }}
-              className="w-full rounded-lg p-3 text-left text-sm hover:bg-[var(--surface-2)]"
+              className="w-full rounded-lg p-2.5 text-left text-xs hover:bg-[var(--surface-2)]"
             >
-                📦 Archivar
+              Archivar
             </button>
             <button
               onClick={() => { shareTask(task.title, task.description); setQuickMenuOpen(false); }}
-              className="w-full rounded-lg p-3 text-left text-sm hover:bg-[var(--surface-2)]"
+              className="w-full rounded-lg p-2.5 text-left text-xs hover:bg-[var(--surface-2)]"
             >
-              📤 Compartir
+              Compartir
             </button>
-            <div className="border-t border-[var(--border)] pt-2">
+            <div className="border-t border-[var(--border)] pt-1">
               <button
                 onClick={() => { onDelete(task.id); setQuickMenuOpen(false); }}
-                className="w-full rounded-lg p-3 text-left text-sm text-red-400 hover:bg-red-400/10"
+                className="w-full rounded-lg p-2.5 text-left text-xs text-red-400 hover:bg-red-400/10"
               >
-                🗑️ Eliminar
+                Eliminar
               </button>
             </div>
           </div>

@@ -7,27 +7,43 @@ export function startVoiceRecognition(): Promise<string> {
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     const recognition = new SpeechRecognition()
+    let gotResult = false
     
     recognition.lang = 'es-ES'
     recognition.continuous = false
     recognition.interimResults = false
 
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript
-      resolve(transcript)
-    }
-
-    recognition.onerror = (event: any) => {
-      reject(new Error(event.error))
-    }
-
-    recognition.onend = () => {
-      if (!recognition.result) {
-        reject(new Error('No result'))
+      if (event.results && event.results.length > 0) {
+        gotResult = true
+        const transcript = event.results[0][0].transcript
+        resolve(transcript)
       }
     }
 
-    recognition.start()
+    recognition.onerror = (event: any) => {
+      if (event.error === 'no-speech' || event.error === 'aborted') {
+        reject(new Error('no-speech'))
+      } else {
+        reject(new Error(event.error))
+      }
+    }
+
+    recognition.onend = () => {
+      if (!gotResult) {
+        setTimeout(() => {
+          if (!gotResult) {
+            reject(new Error('no-speech'))
+          }
+        }, 300)
+      }
+    }
+
+    try {
+      recognition.start()
+    } catch {
+      reject(new Error('Failed to start'))
+    }
   })
 }
 

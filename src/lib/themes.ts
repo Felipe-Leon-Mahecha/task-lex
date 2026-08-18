@@ -7,7 +7,7 @@ export type ThemeAnimationClass =
   | 'theme-glow'
   | 'pastel-shine'
 
-export type AppThemeCategory = 'base' | 'pastel'
+export type AppThemeCategory = 'base' | 'pastel' | 'custom'
 export type AccentThemeCategory = 'base' | 'custom'
 
 export interface AppTheme {
@@ -252,6 +252,143 @@ export const APP_THEMES: AppTheme[] = [
     },
     animationClass: 'pastel-shine',
   },
+  // Categoría Base - Nuevos (4 temas)
+  {
+    id: 'medianoche',
+    name: 'Medianoche',
+    category: 'base',
+    colors: {
+      bg: '#0e0e14',
+      surface: '#16161f',
+      surface2: '#1e1e2a',
+      text: '#ececf6',
+      textMuted: '#9898b0',
+      accent: '#7c6ef0',
+      border: '#2a2a3a',
+    },
+  },
+  {
+    id: 'calido',
+    name: 'Cálido',
+    category: 'base',
+    colors: {
+      bg: '#171008',
+      surface: '#221710',
+      surface2: '#2d1e14',
+      text: '#faf2e8',
+      textMuted: '#c4a888',
+      accent: '#e8a040',
+      border: '#3a2a18',
+    },
+  },
+  {
+    id: 'artico',
+    name: 'Ártico',
+    category: 'base',
+    colors: {
+      bg: '#0c1218',
+      surface: '#111a24',
+      surface2: '#152230',
+      text: '#eaf0f6',
+      textMuted: '#94a8be',
+      accent: '#58b0e8',
+      border: '#1e3040',
+    },
+  },
+  {
+    id: 'carbon',
+    name: 'Carbono',
+    category: 'base',
+    colors: {
+      bg: '#111111',
+      surface: '#1a1a1a',
+      surface2: '#222222',
+      text: '#e8e8e8',
+      textMuted: '#888888',
+      accent: '#e0e0e0',
+      border: '#2e2e2e',
+    },
+  },
+  // Categoría Pastel - Nuevos (4 temas)
+  {
+    id: 'medianoche-pastel',
+    name: 'Medianoche - Pastel',
+    category: 'pastel',
+    bgGradient: 'linear-gradient(120deg, #f0eefc, #e0dcf6, #f0eefc)',
+    colors: {
+      bg: '#f0eefc',
+      surface: '#f7f5fd',
+      surface2: '#eae6f8',
+      text: '#2a2644',
+      textMuted: '#7a72a0',
+      accent: '#8a7cf0',
+      border: '#dcd6f2',
+    },
+    animationClass: 'pastel-shine',
+  },
+  {
+    id: 'calido-pastel',
+    name: 'Cálido - Pastel',
+    category: 'pastel',
+    bgGradient: 'linear-gradient(120deg, #fff8ee, #ffedd4, #fff8ee)',
+    colors: {
+      bg: '#fff8ee',
+      surface: '#fffcf5',
+      surface2: '#fff0de',
+      text: '#4a3820',
+      textMuted: '#b89868',
+      accent: '#f0b060',
+      border: '#f5e4c4',
+    },
+    animationClass: 'pastel-shine',
+  },
+  {
+    id: 'artico-pastel',
+    name: 'Ártico - Pastel',
+    category: 'pastel',
+    bgGradient: 'linear-gradient(120deg, #eef4fa, #dceaf6, #eef4fa)',
+    colors: {
+      bg: '#eef4fa',
+      surface: '#f5f9fd',
+      surface2: '#e4eef8',
+      text: '#1e3040',
+      textMuted: '#6888a8',
+      accent: '#68b8e8',
+      border: '#c8ddf0',
+    },
+    animationClass: 'pastel-shine',
+  },
+  {
+    id: 'carbon-pastel',
+    name: 'Carbono - Pastel',
+    category: 'pastel',
+    bgGradient: 'linear-gradient(120deg, #f0f0f0, #e4e4e4, #f0f0f0)',
+    colors: {
+      bg: '#f0f0f0',
+      surface: '#f8f8f8',
+      surface2: '#e8e8e8',
+      text: '#2a2a2a',
+      textMuted: '#707070',
+      accent: '#606060',
+      border: '#d4d4d4',
+    },
+    animationClass: 'pastel-shine',
+  },
+  // Categoría Personalizado
+  {
+    id: 'custom-app',
+    name: 'Personalizado',
+    category: 'custom',
+    colors: {
+      bg: '#0e0e14',
+      surface: '#16161f',
+      surface2: '#1e1e2a',
+      text: '#ececf6',
+      textMuted: '#9898b0',
+      accent: '#7c6ef0',
+      border: '#2a2a3a',
+    },
+  },
 ]
 
 export const ACCENT_THEMES: AccentTheme[] = [
@@ -328,6 +465,51 @@ export const ACCENT_THEMES: AccentTheme[] = [
       accentStrong: '#23A6A2',
     },
   },
+  {
+    id: 'coral',
+    name: 'Coral',
+    category: 'base',
+    colors: {
+      accent: '#FF6B6B',
+      accentStrong: '#E05555',
+    },
+  },
+  {
+    id: 'lima',
+    name: 'Lima',
+    category: 'base',
+    colors: {
+      accent: '#A8D948',
+      accentStrong: '#8FBF38',
+    },
+  },
+  {
+    id: 'cian',
+    name: 'Cian',
+    category: 'base',
+    colors: {
+      accent: '#00CED1',
+      accentStrong: '#00A8AD',
+    },
+  },
+  {
+    id: 'magenta',
+    name: 'Magenta',
+    category: 'base',
+    colors: {
+      accent: '#D63384',
+      accentStrong: '#B8296F',
+    },
+  },
+  {
+    id: 'dorado-claro',
+    name: 'Dorado claro',
+    category: 'base',
+    colors: {
+      accent: '#FFD700',
+      accentStrong: '#DAA520',
+    },
+  },
   // Categoría Personalizado
   {
     id: 'custom',
@@ -345,6 +527,24 @@ export function applyAppTheme(appThemeId: string) {
   if (!theme) return
 
   const root = document.documentElement
+
+  if (appThemeId === 'custom-app') {
+    const saved = localStorage.getItem('task-lex-custom-app-colors')
+    if (saved) {
+      const c = JSON.parse(saved)
+      root.style.setProperty('--bg', c.bg)
+      root.style.setProperty('--surface', c.surface)
+      root.style.setProperty('--surface-2', c.surface2)
+      root.style.setProperty('--text', c.text)
+      root.style.setProperty('--text-muted', c.textMuted)
+      root.style.setProperty('--border', c.border)
+      root.style.removeProperty('--bg-gradient-size')
+      root.style.removeProperty('--bg-gradient-animation')
+      root.classList.remove('pastel-shine')
+      return
+    }
+  }
+
   root.style.setProperty('--bg', theme.colors.bg)
   root.style.setProperty('--surface', theme.colors.surface)
   root.style.setProperty('--surface-2', theme.colors.surface2)

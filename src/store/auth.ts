@@ -3,11 +3,14 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithCredential,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut as fbSignOut,
   type User,
 } from 'firebase/auth'
+import { Capacitor } from '@capacitor/core'
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
 import { auth } from '../lib/firebase'
 import { setSessionUser } from '../lib/session'
 import { requestPermission } from '../lib/notifications'
@@ -71,11 +74,26 @@ export const useAuthStore = create<AuthState>()((set) => ({
   },
   signInWithGoogle: async () => {
     set({ error: null })
+    const native = Capacitor.isNativePlatform()
     try {
+      if (native) {
+        const res = await FirebaseAuthentication.signInWithGoogle({ useCredentialManager: false })
+        const idToken = res.credential?.idToken
+        if (!idToken) throw new Error('no-id-token')
+        await signInWithCredential(auth!, GoogleAuthProvider.credential(idToken))
+        return true
+      }
       await signInWithPopup(auth!, new GoogleAuthProvider())
       return true
     } catch (e) {
       const code = (e as { code?: string }).code
+      if (native) {
+        const detail = (e as { message?: string }).message || (e as { code?: string }).code || ''
+        set({
+          error: `No se pudo iniciar con Google en la app. ${detail}`.trim(),
+        })
+        return false
+      }
       if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
         set({
           error:

@@ -64,7 +64,12 @@ export default function TaskForm({ open, initial, onSave, onClose }: Props) {
       setTitle(transcript)
     } catch (error) {
       console.error('Voice recognition error:', error)
-      alert('Error al reconocer voz. Intenta de nuevo.')
+      const msg = (error as Error).message
+      if (msg === 'no-speech') {
+        alert('No se detectó voz. Intenta de nuevo.')
+      } else {
+        alert('Error al reconocer voz. Intenta de nuevo.')
+      }
     } finally {
       setIsListening(false)
     }
