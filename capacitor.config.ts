@@ -4,7 +4,12 @@ const config: CapacitorConfig = {
   appId: 'com.tasklex.app',
   appName: 'Flux',
   webDir: 'dist',
-  plugins: {},
+  plugins: {
+    FirebaseAuthentication: {
+      skipNativeAuth: true,
+      providers: ['google.com'],
+    },
+  },
 };
 
 export default config;

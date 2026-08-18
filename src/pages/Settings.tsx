@@ -61,10 +61,8 @@ export default function Settings() {
 
   const toggleCalendarSync = async (on: boolean) => {
     if (on) {
-      const hasPermission = await requestCalendarPermissions()
-      if (hasPermission) {
-        setCalendarSync(true)
-      }
+      await requestCalendarPermissions().catch(() => {})
+      setCalendarSync(true)
     } else {
       setCalendarSync(false)
     }
@@ -248,16 +246,21 @@ export default function Settings() {
           </button>
         </div>
         {autoBackup && (
-          <div className="flex items-center gap-3">
-            <label className="text-xs text-[var(--text-muted)]">Frecuencia (días):</label>
-            <input
-              type="number"
-              min="1"
-              max="30"
-              value={backupFrequency}
-              onChange={(e) => setBackupFrequency(parseInt(e.target.value) || 7)}
-              className="w-20 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-2 py-1 text-xs outline-none focus:border-[var(--accent)]"
-            />
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-[var(--text-muted)]">Cada:</label>
+            {[3, 5, 7].map((d) => (
+              <button
+                key={d}
+                onClick={() => setBackupFrequency(d)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  backupFrequency === d
+                    ? 'border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]'
+                    : 'border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)]/50'
+                }`}
+              >
+                {d} días
+              </button>
+            ))}
           </div>
         )}
       </div>

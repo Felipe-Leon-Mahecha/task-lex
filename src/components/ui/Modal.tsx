@@ -6,11 +6,13 @@ export default function Modal({
   onClose,
   title,
   children,
+  className,
 }: {
   open: boolean
   onClose: () => void
   title: string
   children: ReactNode
+  className?: string
 }) {
   if (!open) return null
   return (
@@ -19,8 +21,10 @@ export default function Modal({
       onClick={onClose}
     >
       <div
-        className="card max-h-[90vh] w-full max-w-lg overflow-y-auto p-5 animate-in zoom-in-95 slide-in-from-bottom-4 duration-200"
+        className={`card max-h-[90vh] w-full max-w-lg overflow-y-auto p-5 animate-in zoom-in-95 slide-in-from-bottom-4 duration-200 ${className ?? ''}`}
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold tracking-tight">{title}</h2>
