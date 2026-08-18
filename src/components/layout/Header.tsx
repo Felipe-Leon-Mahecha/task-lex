@@ -34,7 +34,7 @@ export default function Header() {
           <SearchBox />
         </div>
         <div className="hidden items-center gap-3 sm:flex">
-          <span className="flex items-center gap-1.5 text-[11px text-[var(--text-muted)]">
+          <span className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
             {isOnline ? (
               <Wifi className="h-3.5 w-3.5 text-emerald-400" />
             ) : (
@@ -43,7 +43,7 @@ export default function Header() {
             {status}
           </span>
           {hasPending && (
-            <span className="flex items-center gap-1 text-[10px text-[var(--accent)]">
+            <span className="flex items-center gap-1 text-[10px] text-[var(--accent)]">
               <RefreshCw className="h-3 w-3 animate-spin" />
               {pendingOperations.length} pendiente{pendingOperations.length !== 1 ? 's' : ''}
             </span>

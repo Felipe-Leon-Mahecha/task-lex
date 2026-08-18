@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
+import { BarChart3 } from 'lucide-react'
 import { useTasksStore } from '../store/tasks'
 import { useSectionsStore } from '../store/sections'
 
@@ -60,6 +61,15 @@ export default function Stats() {
     <div className="max-w-4xl">
       <p className="eyebrow">Estadísticas</p>
       <h1 className="mb-6 text-2xl font-bold tracking-tight">Tu productividad</h1>
+
+      {tasks.length === 0 && (
+        <div className="card mb-6 flex flex-col items-center gap-3 p-10 text-center">
+          <BarChart3 className="h-10 w-10 text-[var(--text-muted)]" />
+          <p className="text-sm text-[var(--text-muted)]">
+            Empieza a crear y completar tareas para ver tus estadísticas aquí.
+          </p>
+        </div>
+      )}
 
       <div className="mb-6 grid grid-cols-3 gap-4">
         <div className="card p-4">

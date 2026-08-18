@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { RotateCcw, Trash2 } from 'lucide-react'
+import { RotateCcw, Trash2, CheckCircle2, Archive as ArchiveIcon } from 'lucide-react'
 import { useTasksStore } from '../store/tasks'
 import { useSectionsStore } from '../store/sections'
 import Modal from '../components/ui/Modal'
@@ -40,7 +40,10 @@ export default function Archive() {
         Completadas · {completed.length}
       </h2>
       {completed.length === 0 ? (
-        <p className="mb-6 text-sm text-[var(--text-muted)]">Aún no has completado tareas.</p>
+        <div className="mb-6 flex items-center gap-2 rounded-[calc(var(--radius)*0.8)] border border-dashed border-[var(--border)] p-6 text-sm text-[var(--text-muted)]">
+          <CheckCircle2 className="h-5 w-5 shrink-0" />
+          Aún no has completado tareas.
+        </div>
       ) : (
         <ul className="mb-6 space-y-2">
           {completed.map((t) => (
@@ -68,7 +71,10 @@ export default function Archive() {
         Archivadas · {archived.length}
       </h2>
       {archived.length === 0 ? (
-        <p className="text-sm text-[var(--text-muted)]">Sin tareas archivadas.</p>
+        <div className="flex items-center gap-2 rounded-[calc(var(--radius)*0.8)] border border-dashed border-[var(--border)] p-6 text-sm text-[var(--text-muted)]">
+          <ArchiveIcon className="h-5 w-5 shrink-0" />
+          Sin tareas archivadas.
+        </div>
       ) : (
         <ul className="space-y-2">
           {archived.map((t) => (

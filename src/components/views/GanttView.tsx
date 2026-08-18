@@ -167,7 +167,7 @@ export default function GanttView({
               </div>
             ))}
             {withDue.length === 0 && noDue.length === 0 && (
-              <p className="py-6 text-center text-sm text-[var(--text-muted)]">Sin tareas para el calendario.</p>
+              <p className="py-6 text-center text-sm italic text-[var(--text-muted)]">Sin tareas para el calendario.</p>
             )}
           </div>
         </div>

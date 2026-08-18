@@ -89,7 +89,7 @@ export default function CalendarView({ tasks }: { tasks: Task[] }) {
           {new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'long' }).format(selected)}
         </p>
         {dayTasks.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)]">Sin tareas este día.</p>
+          <p className="text-sm italic text-[var(--text-muted)]">Sin tareas este día.</p>
         ) : (
           <ul className="space-y-1">
             {dayTasks.map((t) => (

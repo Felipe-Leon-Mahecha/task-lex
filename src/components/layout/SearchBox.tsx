@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, X, Filter } from 'lucide-react'
+import { Search, X, Filter, SearchX } from 'lucide-react'
 import { useTasksStore } from '../../store/tasks'
 import { useSectionsStore } from '../../store/sections'
 import type { Priority } from '../../types/task'
@@ -165,7 +165,10 @@ export default function SearchBox() {
       {focused && (query.trim() || hasActiveFilters) && !showFilters && (
         <div className="absolute right-0 top-full z-50 mt-2 w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-lg">
           {results.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-[var(--text-muted)]">Sin resultados</p>
+            <p className="flex items-center gap-2 px-4 py-3 text-sm text-[var(--text-muted)]">
+              <SearchX className="h-4 w-4 shrink-0" />
+              Sin resultados
+            </p>
           ) : (
             results.map((t) => (
               <button
