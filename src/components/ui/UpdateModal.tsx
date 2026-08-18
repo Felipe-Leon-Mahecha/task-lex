@@ -8,6 +8,13 @@ interface UpdateModalProps {
 }
 
 const CHANGELOG: Record<string, string[]> = {
+  '4.0.0': [
+    '🦊 Fox: asistente de IA para crear tareas con lenguaje natural',
+    '🎤 Dictado por voz con reconocimiento nativo de Android',
+    '🖼️ Widget: corrección de crash, tocar abre la app',
+    '💡 Banner informativo del widget en el Dashboard',
+    '🎨 Icono de zorro como botón flotante de Fox',
+  ],
   '3.2.0': [
     '🎨 Sistema de temas mejorado: colores ahora responden a variables CSS',
     '✨ Animaciones premium en botones de acento para temas Oro, Plata, Diamante',
