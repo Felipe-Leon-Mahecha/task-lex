@@ -1,5 +1,3 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
-
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 const GEMINI_MODEL = 'gemini-2.0-flash'
 
@@ -10,13 +8,13 @@ REGLAS:
 - Si el usuario no describe una tarea clara, igualmente extrae lo más cercano a una tarea
 - FECHAS: Convierte fechas relativas ("mañana", "el lunes", "en 3 días") a ISO 8601. Si no hay fecha, usa null
 - HORA: Si mencionan hora, inclúyela en la fecha ISO. Si no, usa medianoche
-- PRIORIDAD: "alta" si hay urgencia explícita o deadlines明天, "baja" si es casual, "media" por defecto
+- PRIORIDAD: "alta" si hay urgencia explícita o deadlines, "baja" si es casual, "media" por defecto
 - TAGS: Extrae categorías relevantes del contexto (ej: "compras", "trabajo", "casa")
 - IDIOMA: El usuario habla español. title y description en español
 - TITLE: Sé conciso pero descriptivo (máx 80 caracteres)
 - DESCRIPTION: Breve contexto adicional si es útil, si no string vacío`
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
