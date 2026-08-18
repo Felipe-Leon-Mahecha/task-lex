@@ -49,16 +49,56 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
-        <!-- Widget Receiver -->
+        <!-- Widget Receiver 2x2 — Fox solo -->
         <receiver
             android:name="io.stencil.flux.TaskWidgetProvider"
-            android:exported="true">
+            android:exported="true"
+            android:label="Fox 2×2">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/task_widget_info" />
+                android:resource="@xml/widget_small_2x2" />
+        </receiver>
+
+        <!-- Widget Receiver 2x1 — Fox + racha -->
+        <receiver
+            android:name="io.stencil.flux.TaskWidgetProvider2x1"
+            android:exported="true"
+            android:label="Fox 2×1">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_medium_2x1" />
+        </receiver>
+
+        <!-- Widget Receiver 3x1 — Fox + stats + tareas -->
+        <receiver
+            android:name="io.stencil.flux.TaskWidgetProvider3x1"
+            android:exported="true"
+            android:label="Fox 3×1">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_wide_3x1" />
+        </receiver>
+
+        <!-- Widget Receiver 4x1 — Stats completas -->
+        <receiver
+            android:name="io.stencil.flux.TaskWidgetProvider4x1"
+            android:exported="true"
+            android:label="Fox 4×1">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_xlarge_4x1" />
         </receiver>
     </application>
 

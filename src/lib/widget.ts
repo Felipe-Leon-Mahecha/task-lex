@@ -21,7 +21,7 @@ export async function updateWidgetData(tasks: any[], currentStreak: number) {
     // Get upcoming tasks (first 3 pending tasks)
     const upcomingTasks = tasks
       .filter((t) => t.status === 'pending')
-      .slice(0, 3)
+      .slice(0, 5)
       .map((t) => t.title)
 
     // Set widget data
@@ -66,6 +66,18 @@ export async function updateWidgetData(tasks: any[], currentStreak: number) {
     await WidgetBridgePlugin.setItem({
       key: 'task_3',
       value: upcomingTasks[2] || '',
+      group: 'widget_bridge_prefs',
+    })
+
+    await WidgetBridgePlugin.setItem({
+      key: 'task_4',
+      value: upcomingTasks[3] || '',
+      group: 'widget_bridge_prefs',
+    })
+
+    await WidgetBridgePlugin.setItem({
+      key: 'task_5',
+      value: upcomingTasks[4] || '',
       group: 'widget_bridge_prefs',
     })
 

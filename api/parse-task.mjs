@@ -77,6 +77,20 @@ export default async function handler(req, res) {
     }
 
     const parsed = JSON.parse(text)
+
+    if (parsed.dueDate) {
+      try {
+        const d = new Date(parsed.dueDate)
+        if (!isNaN(d.getTime())) {
+          parsed.dueDate = d.toISOString()
+        } else {
+          parsed.dueDate = null
+        }
+      } catch {
+        parsed.dueDate = null
+      }
+    }
+
     return res.status(200).json(parsed)
   } catch (e) {
     console.error('Parse task error:', e)
