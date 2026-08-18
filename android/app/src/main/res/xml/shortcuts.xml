@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="create_task"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_create_task"
+        android:shortcutLongLabel="@string/shortcut_create_task_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.tasklex.app"
+            android:targetClass="com.tasklex.app.MainActivity">
+            <data android:scheme="flux" android:host="create" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="view_today"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_view_today"
+        android:shortcutLongLabel="@string/shortcut_view_today_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.tasklex.app"
+            android:targetClass="com.tasklex.app.MainActivity">
+            <data android:scheme="flux" android:host="dashboard" />
+        </intent>
+    </shortcut>
+</shortcuts>

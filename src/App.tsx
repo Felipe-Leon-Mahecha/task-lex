@@ -1,5 +1,7 @@
 import { Suspense, lazy, useEffect, useRef, type TouchEvent } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { App as CapApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 import Sidebar from './components/layout/Sidebar'
 import Header from './components/layout/Header'
 import FocusMode from './components/ui/FocusMode'
@@ -135,6 +137,29 @@ export default function App() {
     }
 
     setupNotificationListener()
+  }, [])
+
+  // Handle deep links (flux://create, flux://dashboard, flux://open)
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+
+    const handleDeepLink = (url: string) => {
+      try {
+        const parsed = new URL(url)
+        const path = parsed.hostname || parsed.pathname.replace('/', '')
+        if (path === 'create') {
+          window.dispatchEvent(new CustomEvent('tasklex:new-task'))
+        } else if (path === 'dashboard') {
+          window.location.hash = '#/'
+        } else if (path === 'open') {
+          window.location.hash = '#/'
+        }
+      } catch {}
+    }
+
+    CapApp.addListener('appUrlOpen', ({ url }: { url: string }) => {
+      handleDeepLink(url)
+    })
   }, [])
 
   useEffect(() => {
