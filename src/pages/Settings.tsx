@@ -41,6 +41,12 @@ export default function Settings() {
   const setSoundsEnabled = useSettingsStore((s) => s.setSoundsEnabled)
   const setAutoBackup = useSettingsStore((s) => s.setAutoBackup)
   const setBackupFrequency = useSettingsStore((s) => s.setBackupFrequency)
+  const foxEnabled = useSettingsStore((s) => s.foxEnabled)
+  const foxRandomMessages = useSettingsStore((s) => s.foxRandomMessages)
+  const foxExpressions = useSettingsStore((s) => s.foxExpressions)
+  const setFoxEnabled = useSettingsStore((s) => s.setFoxEnabled)
+  const setFoxRandomMessages = useSettingsStore((s) => s.setFoxRandomMessages)
+  const setFoxExpressions = useSettingsStore((s) => s.setFoxExpressions)
 
   const onImport = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -318,6 +324,61 @@ export default function Settings() {
             )
           })}
         </ul>
+      </div>
+
+      <div className="card mb-4 max-w-lg p-5">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">🦊</span>
+          <p className="text-sm font-semibold">Sobre Fox</p>
+        </div>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">
+          Configura a Fox, tu asistente virtual. Puede hablarte, darte datos curiosos y ayudarte a recordar tareas.
+        </p>
+
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm">Fox activado</p>
+              <p className="text-xs text-[var(--text-muted)]">Mostrar a Fox en la app</p>
+            </div>
+            <button
+              onClick={() => setFoxEnabled(!foxEnabled)}
+              className={`relative h-6 w-11 rounded-full transition-colors ${foxEnabled ? 'bg-[var(--accent)]' : 'bg-[var(--surface-2)]'}`}
+            >
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${foxEnabled ? 'left-5.5 translate-x-0' : 'left-0.5'}`} />
+            </button>
+          </div>
+
+          {foxEnabled && (
+            <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm">Mensajes aleatorios</p>
+                  <p className="text-xs text-[var(--text-muted)]">Fox te habla de vez en cuando con datos curiosos y chistes</p>
+                </div>
+                <button
+                  onClick={() => setFoxRandomMessages(!foxRandomMessages)}
+                  className={`relative h-6 w-11 rounded-full transition-colors ${foxRandomMessages ? 'bg-[var(--accent)]' : 'bg-[var(--surface-2)]'}`}
+                >
+                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${foxRandomMessages ? 'left-5.5 translate-x-0' : 'left-0.5'}`} />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm">Expresiones</p>
+                  <p className="text-xs text-[var(--text-muted)]">Fox cambia de expresión según el contexto (pensando, celebrando, etc.)</p>
+                </div>
+                <button
+                  onClick={() => setFoxExpressions(!foxExpressions)}
+                  className={`relative h-6 w-11 rounded-full transition-colors ${foxExpressions ? 'bg-[var(--accent)]' : 'bg-[var(--surface-2)]'}`}
+                >
+                  <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${foxExpressions ? 'left-5.5 translate-x-0' : 'left-0.5'}`} />
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="card max-w-lg p-5">

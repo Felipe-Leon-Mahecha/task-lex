@@ -15,6 +15,9 @@ interface SettingsState {
   soundsEnabled: boolean
   autoBackup: boolean
   backupFrequency: number
+  foxEnabled: boolean
+  foxRandomMessages: boolean
+  foxExpressions: boolean
   setDailyGoal: (n: number) => void
   setFocusMinutes: (n: number) => void
   setShortBreak: (n: number) => void
@@ -26,6 +29,9 @@ interface SettingsState {
   setSoundsEnabled: (enabled: boolean) => void
   setAutoBackup: (enabled: boolean) => void
   setBackupFrequency: (freq: number) => void
+  setFoxEnabled: (enabled: boolean) => void
+  setFoxRandomMessages: (enabled: boolean) => void
+  setFoxExpressions: (enabled: boolean) => void
 }
 
 function pushToCloud(s: SettingsState) {
@@ -56,6 +62,9 @@ export const useSettingsStore = create<SettingsState>()(
       soundsEnabled: true,
       autoBackup: false,
       backupFrequency: 7,
+      foxEnabled: true,
+      foxRandomMessages: true,
+      foxExpressions: true,
       setDailyGoal: (n: number) =>
         set((s) => {
           const next = { ...s, dailyGoal: Math.min(50, Math.max(0, Math.round(n))) }
@@ -122,6 +131,12 @@ export const useSettingsStore = create<SettingsState>()(
           pushToCloud(next)
           return next
         }),
+      setFoxEnabled: (enabled) =>
+        set((s) => ({ ...s, foxEnabled: enabled })),
+      setFoxRandomMessages: (enabled) =>
+        set((s) => ({ ...s, foxRandomMessages: enabled })),
+      setFoxExpressions: (enabled) =>
+        set((s) => ({ ...s, foxExpressions: enabled })),
     }),
     { name: 'task-lex-settings' },
   ),

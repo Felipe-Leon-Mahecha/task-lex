@@ -13,4 +13,8 @@
     <string name="auto_backup">Backup automático</string>
     <string name="app_actions_label">Crear tarea en Flux</string>
     <string name="app_actions_description">Crea una tarea rápida en Flux por voz o texto</string>
+    <string name="widget_desc_2x2">Fox — solo la mascota</string>
+    <string name="widget_desc_2x1">Fox con racha y tareas pendientes</string>
+    <string name="widget_desc_3x1">Fox con estadísticas y próximas tareas</string>
+    <string name="widget_desc_4x1">Estadísticas completas y lista de tareas</string>
 </resources>
