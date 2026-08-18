@@ -27,7 +27,6 @@ export default function TaskForm({ open, initial, onSave, onClose }: Props) {
   const [status, setStatus] = useState<Status>(initial?.status ?? 'pending')
   const [recurrence, setRecurrence] = useState<Recurrence>(initial?.recurrence ?? 'none')
   const [focusDay, setFocusDay] = useState(initial?.focusDay ?? false)
-  const [reminderLead, setReminderLead] = useState<number | null>(initial?.reminderLead ?? null)
   const [reminderOption, setReminderOption] = useState<string>(() => {
     if (!initial?.reminderLead) return 'none'
     const mins = initial.reminderLead
@@ -230,20 +229,6 @@ export default function TaskForm({ open, initial, onSave, onClose }: Props) {
               className={field}
             />
           </div>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Avisar antes</label>
-          <Select
-            value={String(reminderLead ?? '')}
-            onChange={(v) => setReminderLead(v ? Number(v) : null)}
-            options={[
-              { value: '', label: 'Sin aviso' },
-              { value: '3600000', label: '1 hora antes' },
-              { value: '86400000', label: '1 día antes' },
-              { value: '172800000', label: '2 días antes' },
-            ]}
-            className={field}
-          />
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input

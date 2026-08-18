@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Flame, Target } from 'lucide-react'
+import { Flame, Target, CalendarDays, Star, Trophy } from 'lucide-react'
 import { useTasksStore } from '../store/tasks'
 import { useSectionsStore } from '../store/sections'
 import { useSettingsStore } from '../store/settings'
@@ -112,9 +112,12 @@ export default function Dashboard() {
                 <strong>{doneToday}</strong> de {todayTasks.length} completadas
               </p>
               <p className="text-xs text-[var(--text-muted)]">
-                {todayTasks.length === 0
-                  ? 'Sin tareas programadas para hoy.'
-                  : todayPct === 100
+                {todayTasks.length === 0 ? (
+                  <span className="flex items-center gap-1.5">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Sin tareas para hoy. ¡A disfrutar el día!
+                  </span>
+                ) : todayPct === 100
                     ? '¡Día completo!'
                     : `${todayTasks.length - doneToday} pendientes por hoy.`}
               </p>
@@ -158,9 +161,10 @@ export default function Dashboard() {
         <div className="card p-5 animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: '100ms' }}>
           <p className="eyebrow">Foco del día · {focus.length}</p>
           {focus.length === 0 ? (
-            <p className="mt-3 text-sm text-[var(--text-muted)]">
+            <div className="mt-3 flex items-center gap-2 text-sm text-[var(--text-muted)]">
+              <Star className="h-4 w-4" />
               Sin foco marcado. Usa la estrella en tus tareas.
-            </p>
+            </div>
           ) : (
             <ul className="mt-3 space-y-2">
               {focus.map((t) => (
@@ -186,9 +190,12 @@ export default function Dashboard() {
                 <strong>{doneTotalToday}</strong> de {dailyGoal} tareas completadas hoy
               </p>
               <p className="text-xs text-[var(--text-muted)]">
-                {dailyGoal === 0
-                  ? 'Sin meta definida. Configúrala en Ajustes.'
-                  : goalPct >= 100
+                {dailyGoal === 0 ? (
+                  <span className="flex items-center gap-1.5">
+                    <Trophy className="h-3.5 w-3.5" />
+                    Sin meta. Configúrala en Ajustes.
+                  </span>
+                ) : goalPct >= 100
                     ? '¡Meta cumplida!'
                     : `Te faltan ${dailyGoal - doneTotalToday}.`}
               </p>

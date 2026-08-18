@@ -6,23 +6,28 @@ export default function SplashScreen() {
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
+    const visited = localStorage.getItem('flux-visited')
+    const duration = visited ? 800 : 2500
+    localStorage.setItem('flux-visited', '1')
+
     const timer = setTimeout(() => {
       setFade(true)
       setTimeout(() => {
         setVisible(false)
-      }, 500)
-    }, 2500)
+      }, 400)
+    }, duration)
 
     // Animate progress bar
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
+        const step = visited ? 8 : 2
         if (prev >= 100) {
           clearInterval(progressInterval)
           return 100
         }
-        return prev + 2
+        return prev + step
       })
-    }, 50)
+    }, visited ? 30 : 50)
 
     return () => {
       clearTimeout(timer)
