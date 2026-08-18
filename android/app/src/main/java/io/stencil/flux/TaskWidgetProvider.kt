@@ -14,7 +14,22 @@ class TaskWidgetProvider : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         for (appWidgetId in appWidgetIds) {
-            updateAppWidget(context, appWidgetManager, appWidgetId)
+            try {
+                updateAppWidget(context, appWidgetManager, appWidgetId)
+            } catch (e: Exception) {
+                val views = RemoteViews(context.packageName, R.layout.widget_task_small)
+                views.setTextViewText(R.id.widget_task_count_small, "⚡")
+                views.setTextViewText(R.id.widget_streak_small, "Abre Flux")
+                val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                if (launchIntent != null) {
+                    val pendingIntent = android.app.PendingIntent.getActivity(
+                        context, appWidgetId, launchIntent,
+                        android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+                    )
+                    views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+                }
+                appWidgetManager.updateAppWidget(appWidgetId, views)
+            }
         }
     }
 
@@ -49,9 +64,9 @@ class TaskWidgetProvider : AppWidgetProvider() {
             // Get shared preferences (same as capacitor-widget-bridge uses)
             val prefs = context.getSharedPreferences("widget_bridge_prefs", Context.MODE_PRIVATE)
 
-            // Get task data
-            val taskCount = prefs.getInt("task_count", 0)
-            val streak = prefs.getInt("streak", 0)
+            // Get task data (stored as strings by WidgetBridge)
+            val taskCount = prefs.getString("task_count", "0")?.toIntOrNull() ?: 0
+            val streak = prefs.getString("streak", "0")?.toIntOrNull() ?: 0
 
             // Update views based on layout
             if (layoutId == R.layout.widget_task_small) {
@@ -166,16 +181,18 @@ class TaskWidgetProvider : AppWidgetProvider() {
         )
 
         private fun parseSectionsWithBackground(sectionsJson: String?): List<SectionWithBg> {
-            if (sectionsJson.isNullOrEmpty()) return emptyList()
+            if (sectionsJson.isNullOrEmpty() || sectionsJson == "[]") return emptyList()
             
             try {
-                // Simple JSON parsing for sections array
-                // Expected format: [{"id":"...","bgImage":"...","bgColor":"..."},...]
                 val sections = mutableListOf<SectionWithBg>()
-                val items = sectionsJson.split("},").map { it.trim() }
+                val cleaned = sectionsJson.trim()
+                if (!cleaned.startsWith("[")) return emptyList()
+                
+                val items = cleaned.split("},")
                 
                 for (item in items) {
-                    val cleanItem = item.removePrefix("[").removeSuffix("]").removeSuffix("}")
+                    val cleanItem = item.removePrefix("[").removeSuffix("]").removeSuffix("}").trim()
+                    if (cleanItem.isEmpty()) continue
                     val idMatch = "\"id\":\"([^\"]+)\"".toRegex().find(cleanItem)
                     val bgImageMatch = "\"bgImage\":\"([^\"]+)\"".toRegex().find(cleanItem)
                     val bgColorMatch = "\"bgColor\":\"([^\"]+)\"".toRegex().find(cleanItem)

@@ -1,5 +1,5 @@
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
-const GEMINI_MODEL = 'gemini-2.0-flash'
+const GEMINI_MODEL = 'gemini-3.5-flash'
 
 const SYSTEM_PROMPT = `Eres Fox, un asistente inteligente de la app Flux.
 Tu ÚNICO trabajo es extraer tareas de frases en lenguaje natural y devolver JSON estructurado.
@@ -47,12 +47,12 @@ export default async function handler(req, res) {
         systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
         generationConfig: {
           responseMimeType: 'application/json',
-          responseSchema: {
+          responseJsonSchema: {
             type: 'object',
             properties: {
               title: { type: 'string' },
               description: { type: 'string' },
-              dueDate: { type: ['string', 'null'] },
+              dueDate: { type: 'string', nullable: true },
               priority: { type: 'string', enum: ['baja', 'media', 'alta'] },
               tags: { type: 'array', items: { type: 'string' } },
             },
@@ -65,8 +65,8 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const err = await response.text()
-      console.error('Gemini API error:', err)
-      return res.status(502).json({ error: 'AI service error' })
+      console.error('Gemini API error:', response.status, err)
+      return res.status(502).json({ error: `AI service error (${response.status})` })
     }
 
     const data = await response.json()
