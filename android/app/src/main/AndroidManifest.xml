@@ -51,7 +51,7 @@
 
         <!-- Widget Receiver -->
         <receiver
-            android:name=".TaskWidgetProvider"
+            android:name="io.stencil.flux.TaskWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

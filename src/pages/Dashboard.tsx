@@ -1,5 +1,6 @@
-import { useMemo } from 'react'
-import { Flame, Target, CalendarDays, Star, Trophy } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Flame, Target, CalendarDays, Star, Trophy, X, LayoutGrid } from 'lucide-react'
+import { Capacitor } from '@capacitor/core'
 import { useTasksStore } from '../store/tasks'
 import { useSectionsStore } from '../store/sections'
 import { useSettingsStore } from '../store/settings'
@@ -93,8 +94,30 @@ export default function Dashboard() {
   const weekdays = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
   const maxDay = Math.max(1, ...dayCounts)
 
+  const [widgetBannerDismissed, setWidgetBannerDismissed] = useState(
+    () => localStorage.getItem('flux-widget-banner') === '1',
+  )
+  const dismissWidgetBanner = () => {
+    localStorage.setItem('flux-widget-banner', '1')
+    setWidgetBannerDismissed(true)
+  }
+
   return (
     <div>
+      {Capacitor.getPlatform() === 'android' && !widgetBannerDismissed && (
+        <div className="mb-4 flex items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <LayoutGrid className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold">Widget disponible</p>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">
+              Mantén presionado el ícono de Flux en tu pantalla y selecciona "Widgets". Arrastra el widget a tu inicio para ver tus tareas sin abrir la app.
+            </p>
+          </div>
+          <button onClick={dismissWidgetBanner} className="shrink-0 rounded-lg p-1 text-[var(--text-muted)] hover:bg-[var(--surface-2)]">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
       <p className="eyebrow">Dashboard</p>
       <h1 className="mb-6 text-2xl font-bold tracking-tight">Vista general</h1>
       <div className="grid gap-4 md:grid-cols-2">
