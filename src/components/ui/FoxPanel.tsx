@@ -7,23 +7,21 @@ import { useTasksStore } from '../../store/tasks'
 import { createTask } from '../../lib/tasks'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import {
+  getFoxState,
+  getFoxStateForContext,
+  setFoxProcessingStart,
+  clearFoxProcessingStart,
+  recordAppOpen,
+  type FoxStateConfig,
+} from '../../lib/fox'
 
-function FoxIcon({ className }: { className?: string }) {
+function FoxBubble({ dialogue, className }: { dialogue: string; className?: string }) {
   return (
-    <svg viewBox="0 0 64 64" fill="none" className={className}>
-      <path d="M8 8L20 28L8 52C8 52 4 36 8 20L8 8Z" fill="#D97706" />
-      <path d="M56 8L44 28L56 52C56 52 60 36 56 20L56 8Z" fill="#D97706" />
-      <path d="M12 14L20 28L12 44C12 44 10 34 12 22L12 14Z" fill="#FDE68A" />
-      <path d="M52 14L44 28L52 44C52 44 54 34 52 22L52 14Z" fill="#FDE68A" />
-      <ellipse cx="32" cy="38" rx="20" ry="18" fill="#EA580C" />
-      <ellipse cx="32" cy="42" rx="14" ry="11" fill="#FEF3C7" />
-      <circle cx="24" cy="32" r="3.5" fill="#1C1917" />
-      <circle cx="40" cy="32" r="3.5" fill="#1C1917" />
-      <circle cx="25" cy="31" r="1.2" fill="white" />
-      <circle cx="41" cy="31" r="1.2" fill="white" />
-      <ellipse cx="32" cy="39" rx="3" ry="2.2" fill="#1C1917" />
-      <path d="M29 42Q32 45 35 42" stroke="#1C1917" strokeWidth="1.2" fill="none" strokeLinecap="round" />
-    </svg>
+    <div className={`relative max-w-[220px] rounded-2xl rounded-bl-sm bg-white px-3 py-2 text-xs text-gray-800 shadow-md dark:bg-gray-100 ${className ?? ''}`}>
+      <div className="absolute -bottom-1 left-2 h-2 w-2 rotate-45 bg-white dark:bg-gray-100" />
+      {dialogue}
+    </div>
   )
 }
 
@@ -37,11 +35,27 @@ export default function FoxPanel() {
   const [created, setCreated] = useState(false)
   const [sectionId, setSectionId] = useState<string>('')
   const [showSectionPicker, setShowSectionPicker] = useState(false)
+  const [foxContext, setFoxContext] = useState<FoxStateConfig | null>(null)
+  const [foxDialogue, setFoxDialogue] = useState('')
+  const [showBubble, setShowBubble] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
   const sections = useSectionsStore((s) => s.sections)
   const addTask = useTasksStore((s) => s.addTask)
+
+  useEffect(() => {
+    recordAppOpen()
+    const { state, dialogue } = getFoxState()
+    setFoxContext(state)
+    setFoxDialogue(dialogue)
+  }, [])
+
+  useEffect(() => {
+    if (open) {
+      setShowBubble(true)
+    }
+  }, [open])
 
   useEffect(() => {
     if (open && inputRef.current) {
@@ -66,6 +80,13 @@ export default function FoxPanel() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
 
+  const updateFox = (context: 'parsing' | 'processing' | 'done' | 'error' | 'completed') => {
+    const { state, dialogue } = getFoxStateForContext(context)
+    setFoxContext(state)
+    setFoxDialogue(dialogue)
+    setShowBubble(true)
+  }
+
   const handleParse = async () => {
     const text = prompt.trim()
     if (!text) return
@@ -73,11 +94,17 @@ export default function FoxPanel() {
     setLoading(true)
     setError(null)
     setParsed(null)
+    updateFox('parsing')
+    setFoxProcessingStart()
 
     try {
       const result = await parseTaskWithAI(text)
       setParsed(result)
+      clearFoxProcessingStart()
+      updateFox('done')
     } catch (e) {
+      clearFoxProcessingStart()
+      updateFox('error')
       setError(e instanceof Error ? e.message : 'Error al procesar')
     } finally {
       setLoading(false)
@@ -117,13 +144,17 @@ export default function FoxPanel() {
 
     addTask(task)
     setCreated(true)
+    updateFox('completed')
     setTimeout(() => {
       setOpen(false)
       setPrompt('')
       setParsed(null)
       setCreated(false)
       setError(null)
-    }, 1200)
+      const { state, dialogue } = getFoxState()
+      setFoxContext(state)
+      setFoxDialogue(dialogue)
+    }, 1500)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -152,9 +183,22 @@ export default function FoxPanel() {
       <button
         onClick={() => setOpen(true)}
         className="fixed bottom-20 right-2 z-50 transition-transform hover:scale-110 active:scale-95 md:bottom-6 md:right-4"
-        aria-label="Fox - Agregar rápido"
+        aria-label="Fox - Asistente"
       >
-        <FoxIcon className="h-16 w-16 drop-shadow-lg md:h-14 md:w-14" />
+        {foxContext && (
+          <div className="relative">
+            {showBubble && foxDialogue && !open && (
+              <div className="absolute -top-12 right-0 w-48">
+                <FoxBubble dialogue={foxDialogue} />
+              </div>
+            )}
+            <img
+              src={foxContext.image}
+              alt={foxContext.label}
+              className="h-16 w-16 drop-shadow-lg md:h-14 md:w-14"
+            />
+          </div>
+        )}
       </button>
 
       {open && (
@@ -165,16 +209,25 @@ export default function FoxPanel() {
           >
             {created ? (
               <div className="flex flex-col items-center gap-3 p-8">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-500/20">
-                  <Check className="h-7 w-7 text-green-500" />
-                </div>
+                <img
+                  src={foxContext?.image}
+                  alt={foxContext?.label}
+                  className="h-20 w-20"
+                />
+                {foxDialogue && <FoxBubble dialogue={foxDialogue} />}
                 <p className="text-sm font-semibold">Fox creó tu tarea</p>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <FoxIcon className="h-6 w-6" />
+                    {foxContext && (
+                      <img
+                        src={foxContext.image}
+                        alt={foxContext.label}
+                        className="h-6 w-6"
+                      />
+                    )}
                     <span className="text-sm font-semibold">Fox</span>
                     <span className="text-[11px] text-[var(--text-muted)]">asistente rápido</span>
                   </div>
@@ -187,6 +240,12 @@ export default function FoxPanel() {
                 </div>
 
                 <div className="p-4">
+                  {foxDialogue && showBubble && (
+                    <div className="mb-3 flex justify-center">
+                      <FoxBubble dialogue={foxDialogue} />
+                    </div>
+                  )}
+
                   <textarea
                     ref={inputRef}
                     value={prompt}
