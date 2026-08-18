@@ -3,6 +3,7 @@ package io.stencil.flux
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.widget.RemoteViews
@@ -34,6 +35,16 @@ class TaskWidgetProvider : AppWidgetProvider() {
             }
 
             val views = RemoteViews(context.packageName, layoutId)
+
+            // Tap to open app
+            val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+            if (launchIntent != null) {
+                val pendingIntent = android.app.PendingIntent.getActivity(
+                    context, appWidgetId, launchIntent,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+                )
+                views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+            }
 
             // Get shared preferences (same as capacitor-widget-bridge uses)
             val prefs = context.getSharedPreferences("widget_bridge_prefs", Context.MODE_PRIVATE)
