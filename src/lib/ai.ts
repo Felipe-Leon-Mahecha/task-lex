@@ -1,6 +1,10 @@
 import { z } from 'zod'
+import { Capacitor } from '@capacitor/core'
 
-const PARSE_URL = '/api/parse-task'
+const API_HOST = Capacitor.getPlatform() === 'android'
+  ? 'task-lex.vercel.app'
+  : window.location.host
+const PARSE_URL = `${window.location.protocol}//${API_HOST}/api/parse-task`
 
 export const ParsedTaskSchema = z.object({
   title: z.string().min(1).max(100),
