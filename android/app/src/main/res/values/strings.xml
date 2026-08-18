@@ -4,4 +4,13 @@
     <string name="title_activity_main">Flux</string>
     <string name="package_name">com.tasklex.app</string>
     <string name="custom_url_scheme">com.tasklex.app</string>
+    <string name="shortcut_create_task">Crear tarea</string>
+    <string name="shortcut_create_task_long">Crea una nueva tarea en Flux</string>
+    <string name="shortcut_view_today">Ver hoy</string>
+    <string name="shortcut_view_today_long">Ve las tareas de hoy en Flux</string>
+    <string name="shortcut_open_app">Abrir Flux</string>
+    <string name="shortcut_open_app_long">Abre la app Flux</string>
+    <string name="auto_backup">Backup automático</string>
+    <string name="app_actions_label">Crear tarea en Flux</string>
+    <string name="app_actions_description">Crea una tarea rápida en Flux por voz o texto</string>
 </resources>
