@@ -9,6 +9,7 @@ import Tutorial from './components/ui/Tutorial'
 import UpdateModal from './components/ui/UpdateModal'
 import SplashScreen from './components/ui/SplashScreen'
 import Toast from './components/ui/Toast'
+import FoxPanel from './components/ui/FoxPanel'
 import { useAuthStore } from './store/auth'
 import { useUIStore } from './store/ui'
 import { useSectionsStore } from './store/sections'
@@ -255,6 +256,7 @@ export default function App() {
       <Tutorial />
       <UpdateModal forceOpen={updateModalOpen} onClose={closeUpdateModal} />
       <Toast />
+      <FoxPanel />
     </div>
     </>
   )
