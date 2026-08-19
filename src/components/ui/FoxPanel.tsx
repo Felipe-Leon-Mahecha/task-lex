@@ -17,11 +17,12 @@ import {
   type FoxStateConfig,
 } from '../../lib/fox'
 
-function FoxBubble({ dialogue, className }: { dialogue: string; className?: string }) {
+function FoxBubble({ dialogue, direction = 'up', className }: { dialogue: string; direction?: 'up' | 'down'; className?: string }) {
   return (
-    <div className={`animate-fox-bubble relative max-w-[220px] rounded-2xl rounded-bl-sm bg-white px-3 py-2 text-xs leading-relaxed text-gray-800 shadow-md dark:bg-gray-100 ${className ?? ''}`}>
-      <div className="absolute -bottom-1 left-2 h-2 w-2 rotate-45 bg-white dark:bg-gray-100" />
+    <div className={`animate-fox-bubble relative max-w-[220px] rounded-2xl bg-white px-3 py-2 text-xs leading-relaxed text-gray-800 shadow-md dark:bg-gray-100 ${direction === 'up' ? 'rounded-bl-sm' : 'rounded-tl-sm'} ${className ?? ''}`}>
+      {direction === 'down' && <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-white dark:bg-gray-100" />}
       {dialogue}
+      {direction === 'up' && <div className="absolute -bottom-1 left-4 h-2 w-2 rotate-45 bg-white dark:bg-gray-100" />}
     </div>
   )
 }
@@ -191,8 +192,8 @@ export default function FoxPanel() {
       <div className="fixed bottom-20 right-2 z-50 md:bottom-6 md:right-4">
         <div className="relative">
           {showBubble && foxDialogue && !open && (
-            <div className="absolute -top-14 right-0 z-10" style={{ overflow: 'visible' }}>
-              <FoxBubble dialogue={foxDialogue} />
+            <div className="absolute -top-[72px] -left-2 z-10" style={{ overflow: 'visible' }}>
+              <FoxBubble dialogue={foxDialogue} direction="down" />
             </div>
           )}
           <button
@@ -219,23 +220,23 @@ export default function FoxPanel() {
             className="relative w-full max-w-md overflow-visible rounded-2xl border border-[var(--border)] bg-[var(--bg)] shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-200"
           >
             {foxContext && (
-              <div className="absolute -top-16 left-1/2 z-20 -translate-x-1/2" style={{ overflow: 'visible' }}>
+              <div className="absolute -top-20 left-1/2 z-20 -translate-x-1/2" style={{ overflow: 'visible' }}>
+                {showBubble && foxDialogue && (
+                  <div className="absolute -top-14 left-1/2 z-30 -translate-x-1/2" style={{ overflow: 'visible' }}>
+                    <FoxBubble dialogue={foxDialogue} direction="down" />
+                  </div>
+                )}
                 <img
                   src={foxContext.image}
                   alt={foxContext.label}
                   className="h-24 w-24 drop-shadow-xl md:h-20 md:w-20"
                   style={{ objectFit: 'contain' }}
                 />
-                {showBubble && foxDialogue && (
-                  <div className="absolute -top-14 left-1/2 z-30 -translate-x-1/2" style={{ overflow: 'visible' }}>
-                    <FoxBubble dialogue={foxDialogue} />
-                  </div>
-                )}
               </div>
             )}
 
             {created ? (
-              <div className="flex flex-col items-center gap-3 pt-24 pb-8">
+              <div className="flex flex-col items-center gap-3 pt-28 pb-8">
                 {foxContext && (
                   <img
                     src={foxContext.image}
@@ -249,7 +250,7 @@ export default function FoxPanel() {
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3 pt-20">
+                <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3 pt-24">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">Fox</span>
                     <span className="text-[11px] text-[var(--text-muted)]">asistente rápido</span>
