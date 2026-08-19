@@ -6,23 +6,14 @@ import { useSectionsStore } from '../store/sections'
 import { useSettingsStore } from '../store/settings'
 import { isToday } from '../lib/tasks'
 import { completedTodayCount } from '../lib/progress'
+import { startOfDay, sameDay } from '../lib/dateUtils'
 import { last7Focus, totalFocusMinutes } from '../lib/focusStats'
 
 function fmtTime(d: Date) {
   return new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit' }).format(d)
 }
 
-function startOfDay(d: Date) {
-  const x = new Date(d)
-  x.setHours(0, 0, 0, 0)
-  return x
-}
 
-function sameDay(a: Date, b: Date) {
-  const x = startOfDay(a)
-  const y = startOfDay(b)
-  return x.getTime() === y.getTime()
-}
 
 function Ring({ pct }: { pct: number }) {
   const r = 26

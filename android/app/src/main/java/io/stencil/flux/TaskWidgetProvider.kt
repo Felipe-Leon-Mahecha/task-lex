@@ -5,7 +5,6 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.graphics.Color
 import android.widget.RemoteViews
 import java.text.SimpleDateFormat
 import java.util.*
@@ -61,11 +60,12 @@ class TaskWidgetProvider : AppWidgetProvider() {
             val prefs = context.getSharedPreferences("widget_bridge_prefs", Context.MODE_PRIVATE)
             val taskCount = prefs.getString("task_count", "0")?.toIntOrNull() ?: 0
             val streak = prefs.getString("streak", "0")?.toIntOrNull() ?: 0
-            val lastUpdate = prefs.getString("last_update", "")
 
             if (foxRes != 0) {
                 try { views.setImageViewResource(R.id.widget_fox_image, foxRes) } catch (_: Exception) {}
             }
+
+            val tip = generateFoxTip(taskCount, streak)
 
             when (layoutId) {
                 R.layout.widget_fox_2x2 -> {
@@ -80,6 +80,10 @@ class TaskWidgetProvider : AppWidgetProvider() {
                     val dateFormat = SimpleDateFormat("EEE d MMM", Locale("es"))
                     views.setTextViewText(R.id.widget_date, dateFormat.format(Date()))
                     showTasks(prefs, views, listOf(R.id.widget_task_1, R.id.widget_task_2, R.id.widget_task_3))
+                    if (tip.isNotEmpty()) {
+                        views.setTextViewText(R.id.widget_fox_tip, tip)
+                        views.setViewVisibility(R.id.widget_fox_tip, android.view.View.VISIBLE)
+                    }
                 }
                 R.layout.widget_fox_4x1 -> {
                     views.setTextViewText(R.id.widget_streak_small, "🔥 $streak racha")
@@ -87,10 +91,47 @@ class TaskWidgetProvider : AppWidgetProvider() {
                     val dateFormat = SimpleDateFormat("EEE d MMM", Locale("es"))
                     views.setTextViewText(R.id.widget_date, dateFormat.format(Date()))
                     showTasks(prefs, views, listOf(R.id.widget_task_1, R.id.widget_task_2, R.id.widget_task_3, R.id.widget_task_4, R.id.widget_task_5))
+                    if (tip.isNotEmpty()) {
+                        views.setTextViewText(R.id.widget_fox_tip, tip)
+                        views.setViewVisibility(R.id.widget_fox_tip, android.view.View.VISIBLE)
+                    }
                 }
             }
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
+        }
+
+        private fun generateFoxTip(taskCount: Int, streak: Int): String {
+            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val tips = mutableListOf<String>()
+
+            if (taskCount == 0) {
+                tips.add("¡Día libre! Disfrútalo 🦊")
+            } else if (taskCount <= 2) {
+                tips.add("Solo $taskCount tareas, ¡tú puedes!")
+            } else if (taskCount >= 5) {
+                tips.add("$taskCount tareas hoy, ¡ánimo!")
+            }
+
+            if (streak >= 7) {
+                tips.add("¡Racha de $streak días! Imparable 🔥")
+            } else if (streak >= 3) {
+                tips.add("Racha de $streak días, ¡no pares!")
+            } else if (streak == 0 && taskCount > 0) {
+                tips.add("Empieza tu racha hoy 💪")
+            }
+
+            if (hour in 6..10) {
+                tips.add("Buenos días, ¡a comenzar!")
+            } else if (hour in 12..14) {
+                tips.add("Hora de almorzar y seguir")
+            } else if (hour in 18..22) {
+                tips.add("Último esfuerzo del día")
+            } else if (hour in 23..24 || hour in 0..5) {
+                tips.add("Descansa, mañana hay tareas")
+            }
+
+            return if (tips.isNotEmpty()) tips.random() else ""
         }
 
         private fun showTasks(prefs: SharedPreferences, views: RemoteViews, ids: List<Int>) {

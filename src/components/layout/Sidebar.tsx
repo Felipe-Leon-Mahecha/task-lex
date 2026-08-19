@@ -166,6 +166,7 @@ export default function Sidebar() {
           <button
             onClick={close}
             className="rounded-full p-2 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+            aria-label="Cerrar menú"
           >
             <X className="h-5 w-5" />
           </button>

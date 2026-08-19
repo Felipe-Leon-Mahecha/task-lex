@@ -1,14 +1,9 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Task } from '../../types/task'
+import { startOfDay } from '../../lib/dateUtils'
 
 const weekday = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
-
-function startOfDay(d: Date) {
-  const x = new Date(d)
-  x.setHours(0, 0, 0, 0)
-  return x
-}
 
 function dayDiff(a: Date, b: Date) {
   return Math.round((startOfDay(a).getTime() - startOfDay(b).getTime()) / 86400000)
@@ -51,6 +46,7 @@ export default function GanttView({
               setStart(d)
             }}
             className="rounded-full p-2 text-[var(--text-muted)] hover:bg-[var(--surface-2)]"
+            aria-label="Semana anterior"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -65,6 +61,7 @@ export default function GanttView({
               setStart(d)
             }}
             className="rounded-full p-2 text-[var(--text-muted)] hover:bg-[var(--surface-2)]"
+            aria-label="Semana siguiente"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

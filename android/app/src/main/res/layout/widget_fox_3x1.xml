@@ -59,7 +59,20 @@
                 android:text=""
                 android:textSize="10sp"
                 android:textColor="#9C9C9C"
-                android:layout_marginTop="4dp" />
+                android:layout_marginTop="2dp" />
+
+            <TextView
+                android:id="@+id/widget_fox_tip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="9sp"
+                android:textColor="#E0B563CC"
+                android:fontFamily="sans-serif-light"
+                android:layout_marginTop="4dp"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:visibility="gone" />
 
         </LinearLayout>
 
