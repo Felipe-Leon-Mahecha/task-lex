@@ -19,10 +19,10 @@ import {
 
 function FoxBubble({ dialogue, direction = 'up', className }: { dialogue: string; direction?: 'up' | 'down'; className?: string }) {
   return (
-    <div className={`animate-fox-bubble relative max-w-[220px] rounded-2xl bg-white px-3 py-2 text-xs leading-relaxed text-gray-800 shadow-md dark:bg-gray-100 ${direction === 'up' ? 'rounded-bl-sm' : 'rounded-tl-sm'} ${className ?? ''}`}>
-      {direction === 'down' && <div className="absolute -top-1 left-4 h-2 w-2 rotate-45 bg-white dark:bg-gray-100" />}
+    <div className={`animate-fox-bubble relative max-w-[260px] min-w-[120px] rounded-2xl bg-white px-3.5 py-2.5 text-[13px] leading-snug text-gray-800 shadow-md dark:bg-gray-100 ${direction === 'up' ? 'rounded-bl-sm' : 'rounded-tl-sm'} ${className ?? ''}`}>
+      {direction === 'down' && <div className="absolute -top-1 left-5 h-2 w-2 rotate-45 bg-white dark:bg-gray-100" />}
       {dialogue}
-      {direction === 'up' && <div className="absolute -bottom-1 left-4 h-2 w-2 rotate-45 bg-white dark:bg-gray-100" />}
+      {direction === 'up' && <div className="absolute -bottom-1 left-5 h-2 w-2 rotate-45 bg-white dark:bg-gray-100" />}
     </div>
   )
 }
