@@ -14,6 +14,7 @@
   --gradient-to: #f4d9a6;
   --gradient-angle: 135deg;
   --has-gradient: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 * {

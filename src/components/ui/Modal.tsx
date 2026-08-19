@@ -31,6 +31,7 @@ export default function Modal({
           <button
             onClick={onClose}
             className="rounded-full p-1 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+            aria-label="Cerrar"
           >
             <X className="h-4 w-4" />
           </button>

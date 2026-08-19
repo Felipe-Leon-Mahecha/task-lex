@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Undo2, X } from 'lucide-react'
 import { useUndoStore } from '../../store/undo'
+import { useTasksStore } from '../../store/tasks'
+import type { Task } from '../../types/task'
 
 export default function Toast() {
   const [visible, setVisible] = useState(false)
   const [message, setMessage] = useState('')
   const actions = useUndoStore((s) => s.actions)
   const undoLast = useUndoStore((s) => s.undoLast)
+  const addTask = useTasksStore((s) => s.addTask)
+  const updateTask = useTasksStore((s) => s.updateTask)
 
   useEffect(() => {
     if (actions.length > 0) {
@@ -19,21 +23,29 @@ export default function Toast() {
       }
       setMessage(messages[lastAction.type])
       setVisible(true)
-      
+
       const timer = setTimeout(() => {
         setVisible(false)
-      }, 4000)
-      
+      }, 5000)
+
       return () => clearTimeout(timer)
     }
   }, [actions])
 
-  if (!visible) return null
+  const handleUndo = useCallback(() => {
+    const action = undoLast()
+    if (!action) return setVisible(false)
 
-  const handleUndo = () => {
-    undoLast()
+    if (action.type === 'delete' && action.previousState) {
+      addTask(action.previousState as Task)
+    } else if ((action.type === 'complete' || action.type === 'archive' || action.type === 'move') && action.previousState) {
+      updateTask(action.taskId, action.previousState)
+    }
+
     setVisible(false)
-  }
+  }, [undoLast, addTask, updateTask])
+
+  if (!visible) return null
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-[150] animate-in slide-in-from-bottom-4 duration-300 md:left-auto md:right-4 md:w-auto">
@@ -50,6 +62,7 @@ export default function Toast() {
           <button
             onClick={() => setVisible(false)}
             className="rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+            aria-label="Cerrar"
           >
             <X className="h-4 w-4" />
           </button>

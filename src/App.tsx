@@ -17,23 +17,14 @@ import { useTutorialStore } from './store/tutorial'
 import { useSettingsStore } from './store/settings'
 import { useTasksStore } from './store/tasks'
 import { applyTheme } from './lib/themes'
+import { startOfDay, sameDay } from './lib/dateUtils'
 import { scheduleDailyReminders } from './lib/notifications'
 import { updateWidgetData } from './lib/widget'
 import { initNetworkListener } from './store/offline'
 import { checkAutoBackup } from './lib/backup'
 import { LocalNotifications } from '@capacitor/local-notifications'
 
-function startOfDay(d: Date) {
-  const x = new Date(d)
-  x.setHours(0, 0, 0, 0)
-  return x
-}
 
-function sameDay(a: Date, b: Date) {
-  const x = startOfDay(a)
-  const y = startOfDay(b)
-  return x.getTime() === y.getTime()
-}
 
 const Login = lazy(() => import('./pages/Login'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -45,7 +36,21 @@ const Opiniones = lazy(() => import('./pages/Opiniones'))
 const Stats = lazy(() => import('./pages/Stats'))
 
 function PageFallback() {
-  return <div className="flex h-full items-center justify-center text-sm text-[var(--text-muted)]">Cargando...</div>
+  return (
+    <div className="p-4 md:p-8 space-y-4">
+      <div className="animate-pulse h-4 w-32 rounded bg-[var(--surface-2)]" />
+      <div className="animate-pulse h-8 w-48 rounded bg-[var(--surface-2)]" />
+      <div className="grid gap-4 md:grid-cols-2">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="card p-5 space-y-3">
+            <div className="animate-pulse h-4 w-24 rounded bg-[var(--surface-2)]" />
+            <div className="animate-pulse h-3 w-full rounded bg-[var(--surface-2)]" />
+            <div className="animate-pulse h-3 w-3/4 rounded bg-[var(--surface-2)]" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export default function App() {

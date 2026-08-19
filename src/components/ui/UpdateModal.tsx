@@ -113,6 +113,7 @@ export default function UpdateModal({ onClose, forceOpen }: UpdateModalProps) {
           <button
             onClick={handleClose}
             className="rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+            aria-label="Cerrar"
           >
             <X className="h-5 w-5" />
           </button>

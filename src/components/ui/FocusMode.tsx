@@ -183,6 +183,7 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
           onClick={handleClose}
           title="Salir del modo foco"
           className="rounded-full p-2 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+          aria-label="Salir del modo foco"
         >
           <X className="h-5 w-5" />
         </button>

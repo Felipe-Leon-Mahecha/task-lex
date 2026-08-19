@@ -27,6 +27,7 @@ export default function Header() {
           title="Abrir menú"
           data-tut="menu"
           className="rounded-full p-2.5 text-[var(--text)] hover:bg-[var(--surface-2)] sm:hidden"
+          aria-label="Abrir menú"
         >
           <Menu className="h-7 w-7" />
         </button>
@@ -55,6 +56,7 @@ export default function Header() {
             title="Cerrar sesión"
             data-tut="logout"
             className="rounded-full p-2 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+            aria-label="Cerrar sesión"
           >
             <LogOut className="h-4 w-4" />
           </button>
@@ -64,6 +66,7 @@ export default function Header() {
           title="Modo foco"
           data-tut="focus"
           className="rounded-full p-2 text-[var(--accent)] hover:bg-[var(--surface-2)]"
+          aria-label="Modo foco"
         >
           <Clock className="h-5 w-5" />
         </button>
