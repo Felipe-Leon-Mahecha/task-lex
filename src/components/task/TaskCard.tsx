@@ -62,10 +62,8 @@ export default memo(function TaskCard({
   const doneCount = task.subtasks.filter((s) => s.done).length
   const pm = priorityMeta[task.priority]
   const [moveOpen, setMoveOpen] = useState(false)
-  const [quickMenuOpen, setQuickMenuOpen] = useState(false)
   const touchStartX = useRef<number>(0)
   const touchStartY = useRef<number>(0)
-  const touchStartTime = useRef<number>(0)
   const [swipeOffset, setSwipeOffset] = useState(0)
   const due = task.dueDate
     ? new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(
@@ -78,7 +76,6 @@ export default memo(function TaskCard({
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
-    touchStartTime.current = Date.now()
   }
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -93,24 +90,12 @@ export default memo(function TaskCard({
 
   const handleTouchEnd = () => {
     const deltaX = swipeOffset
-    const touchDuration = Date.now() - touchStartTime.current
-    
-    // Detectar long press (500ms+ sin movimiento significativo)
-    if (touchDuration > 500 && Math.abs(deltaX) < 20) {
-      setQuickMenuOpen(true)
-      hapticImpact(ImpactStyle.Light)
-      setSwipeOffset(0)
-      return
-    }
     
     if (Math.abs(deltaX) > 80) {
-      // Swipe detectado
       if (deltaX > 0) {
-        // Swipe derecha = completar
         onToggle(task.id)
         hapticImpact(ImpactStyle.Medium)
       } else {
-        // Swipe izquierda = archivar
         onArchive(task.id)
         hapticImpact(ImpactStyle.Light)
       }
@@ -258,60 +243,6 @@ export default memo(function TaskCard({
       </div>
 
       {moveOpen && onMove && <MoveTaskModal open={moveOpen} onClose={() => setMoveOpen(false)} currentId={task.id} onMove={(sectionId) => onMove(task.id, sectionId)} />}
-      {quickMenuOpen && (
-        <Modal open={quickMenuOpen} onClose={() => setQuickMenuOpen(false)} title="Acciones rápidas" className="max-w-xs">
-          <div className="space-y-1">
-            <button
-              onClick={() => { onEdit(task); setQuickMenuOpen(false); }}
-              className="w-full rounded-lg p-2.5 text-left text-xs hover:bg-[var(--surface-2)]"
-            >
-              Editar tarea
-            </button>
-            <button
-              onClick={() => { onToggle(task.id); setQuickMenuOpen(false); }}
-              className="w-full rounded-lg p-2.5 text-left text-xs hover:bg-[var(--surface-2)]"
-            >
-              {task.status === 'done' ? 'Marcar pendiente' : 'Completar'}
-            </button>
-            {onDuplicate && (
-              <button
-                onClick={() => { onDuplicate(task); setQuickMenuOpen(false); }}
-                className="w-full rounded-lg p-2.5 text-left text-xs hover:bg-[var(--surface-2)]"
-              >
-                Duplicar
-              </button>
-            )}
-            {onMove && (
-              <button
-                onClick={() => { setMoveOpen(true); setQuickMenuOpen(false); }}
-                className="w-full rounded-lg p-2.5 text-left text-xs hover:bg-[var(--surface-2)]"
-              >
-                Mover a otro apartado
-              </button>
-            )}
-            <button
-              onClick={() => { onArchive(task.id); setQuickMenuOpen(false); }}
-              className="w-full rounded-lg p-2.5 text-left text-xs hover:bg-[var(--surface-2)]"
-            >
-              Archivar
-            </button>
-            <button
-              onClick={() => { shareTask(task.title, task.description); setQuickMenuOpen(false); }}
-              className="w-full rounded-lg p-2.5 text-left text-xs hover:bg-[var(--surface-2)]"
-            >
-              Compartir
-            </button>
-            <div className="border-t border-[var(--border)] pt-1">
-              <button
-                onClick={() => { onDelete(task.id); setQuickMenuOpen(false); }}
-                className="w-full rounded-lg p-2.5 text-left text-xs text-red-400 hover:bg-red-400/10"
-              >
-                Eliminar
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
       <Modal open={preview !== null} onClose={() => setPreview(null)} title="Foto">
         <div className="flex justify-center">
           <img src={preview ?? ''} alt="Foto de la tarea" className="max-h-[70vh] rounded-xl object-contain" />
