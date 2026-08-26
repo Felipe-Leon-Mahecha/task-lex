@@ -55,8 +55,18 @@ export async function startSync(uid: string) {
   let firstSnapshot = true
   unsubs.push(
     onSnapshot(collection(fdb, 'users', uid, 'tasks'), (snap) => {
-      const tasks = snap.docs.map((d) => reviveTask(d.id, d.data() as Record<string, unknown>))
-      useTasksStore.setState({ tasks })
+      const remote = snap.docs.map((d) => reviveTask(d.id, d.data() as Record<string, unknown>))
+      const local = useTasksStore.getState().tasks
+      const localMap = new Map(local.map((t) => [t.id, t]))
+      const merged = remote.map((r) => {
+        const l = localMap.get(r.id)
+        if (l && l.updatedAt && r.updatedAt && l.updatedAt >= r.updatedAt) return l
+        return r
+      })
+      local.forEach((l) => {
+        if (!remote.some((r) => r.id === l.id)) merged.push(l)
+      })
+      useTasksStore.setState({ tasks: merged })
       if (firstSnapshot) {
         firstSnapshot = false
         rescheduleReminders()

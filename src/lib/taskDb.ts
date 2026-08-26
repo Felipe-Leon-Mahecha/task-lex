@@ -30,7 +30,7 @@ export function focusDoc(uid: string) {
 
 export async function saveSettings(uid: string, settings: Record<string, unknown>) {
   if (!db) return
-  await setDoc(settingsDoc(uid), settings)
+  await setDoc(settingsDoc(uid), settings, { merge: true })
 }
 
 export async function saveFocusLog(uid: string, entries: { d: string; min: number }[]) {

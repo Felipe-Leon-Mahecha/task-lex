@@ -84,7 +84,7 @@ export default function CalendarPicker({ value, onChange, onClose }: Props) {
               style={legibleFont}
               className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm leading-none transition-colors ${
                 isSelected
-                  ? 'bg-[var(--accent)] font-semibold text-[#121212]'
+                  ? 'bg-[var(--accent)] font-semibold text-[var(--accent-text,#121212)]'
                   : isCurrentMonth
                     ? 'text-[var(--text)] hover:bg-[var(--surface)]'
                     : 'text-[var(--text-muted)]'
@@ -107,7 +107,7 @@ export default function CalendarPicker({ value, onChange, onClose }: Props) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-[#121212] hover:opacity-90"
+          className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-[var(--accent-text,#121212)] hover:opacity-90"
         >
           Cancelar
         </button>

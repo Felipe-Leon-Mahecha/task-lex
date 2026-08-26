@@ -1,6 +1,7 @@
-import { Check } from 'lucide-react'
+import { Check, Lock, Palette } from 'lucide-react'
 import { useMemo, useState, useCallback } from 'react'
 import { useSettingsStore } from '../../store/settings'
+import { useFoxSkinsStore } from '../../store/foxSkins'
 import { APP_THEMES, ACCENT_THEMES, applyAppTheme, applyAccentTheme } from '../../lib/themes'
 import type { AppThemeCategory, AccentThemeCategory } from '../../lib/themes'
 
@@ -41,6 +42,40 @@ export default function ThemeSelector() {
   const accentThemeId = useSettingsStore((s) => s.accentThemeId)
   const setAppThemeId = useSettingsStore((s) => s.setAppThemeId)
   const setAccentThemeId = useSettingsStore((s) => s.setAccentThemeId)
+  const coins = useFoxSkinsStore((s) => s.coins)
+  const themeUnlocked = useFoxSkinsStore((s) => s.themeUnlocked)
+  const unlockTheme = useFoxSkinsStore((s) => s.unlockTheme)
+  const [buyError, setBuyError] = useState(false)
+
+  if (!themeUnlocked) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)]/15">
+          <Lock className="h-6 w-6 text-[var(--accent)]" />
+        </div>
+        <h3 className="text-base font-bold">Personalización de tema bloqueada</h3>
+        <p className="max-w-[280px] text-xs leading-relaxed text-[var(--text-muted)]">
+          Desbloquea todos los colores base, pastel y el selector completo de acento para dejar la app a tu gusto.
+        </p>
+        <button
+          onClick={() => {
+            setBuyError(false)
+            if (!unlockTheme()) setBuyError(true)
+          }}
+          disabled={coins < 500}
+          className="mt-1 flex items-center gap-2 rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-bold text-[var(--bg)] transition-transform active:scale-95 disabled:opacity-40"
+        >
+          {coins >= 500 ? (
+            <>Desbloquear · 500 <img src="/coins/moneda.png" alt="moneda" className="h-4 w-4" /></>
+          ) : (
+            <><Palette className="h-4 w-4" /> Te faltan monedas</>
+          )}
+        </button>
+        <p className="text-[11px] text-[var(--text-muted)]">Tienes {coins} monedas</p>
+        {buyError && <p className="text-xs font-semibold text-red-400">No se pudo desbloquear, inténtalo de nuevo.</p>}
+      </div>
+    )
+  }
 
   const [activeTab, setActiveTab] = useState<'app' | 'accent'>('app')
 

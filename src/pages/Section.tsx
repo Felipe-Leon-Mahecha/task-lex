@@ -14,6 +14,7 @@ import { useSectionsStore } from '../store/sections'
 import { createTask, toTaskInput, type TaskInput } from '../lib/tasks'
 import { nextOccurrence } from '../lib/recurrence'
 import { celebrateCompletion } from '../lib/celebrate'
+import { useFoxSkinsStore } from '../store/foxSkins'
 import type { Priority, Recurrence, SectionId, Status, Task, ViewMode } from '../types/task'
 
 const recurrenceLabel: Record<Recurrence, string> = {
@@ -101,6 +102,7 @@ export default function Section({ sectionId }: { sectionId: SectionId }) {
     if (next === 'done' && t.status !== 'done') {
       const all = useTasksStore.getState().tasks
       setTimeout(() => celebrateCompletion(all), 180)
+      useFoxSkinsStore.getState().recordTaskReward()
     }
     useTasksStore
       .getState()
@@ -128,7 +130,7 @@ export default function Section({ sectionId }: { sectionId: SectionId }) {
   const toggleStatus = useCallback((id: string) => {
     const t = useTasksStore.getState().tasks.find((x) => x.id === id)
     if (!t) return
-    const next: Status = t.status === 'pending' ? 'in_progress' : t.status === 'in_progress' ? 'done' : 'pending'
+    const next: Status = t.status === 'done' ? 'pending' : 'done'
     if (next === 'done' && t.recurrence !== 'none') {
       setRecurringTask(t)
       return
@@ -201,7 +203,7 @@ export default function Section({ sectionId }: { sectionId: SectionId }) {
               key={id}
               onClick={() => setView(sectionId, id)}
               className={`rounded-full px-3 py-1 text-xs transition-colors ${
-                view === id ? 'bg-[var(--accent)] font-semibold text-[#121212]' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                view === id ? 'bg-[var(--accent)] font-semibold text-[var(--accent-text,#121212)]' : 'text-[var(--text-muted)] hover:text-[var(--text)]'
               }`}
             >
               {label}
@@ -232,7 +234,7 @@ export default function Section({ sectionId }: { sectionId: SectionId }) {
               onClick={() => setPriorityFilter(c.id)}
               className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors ${
                 priorityFilter === c.id
-                  ? 'border-[var(--accent)] bg-[var(--accent)] font-semibold text-[#121212]'
+                  ? 'border-[var(--accent)] bg-[var(--accent)] font-semibold text-[var(--accent-text,#121212)]'
                   : 'border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]'
               }`}
             >
@@ -249,7 +251,7 @@ export default function Section({ sectionId }: { sectionId: SectionId }) {
                 onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
                 className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${
                   tagFilter === tag
-                    ? 'border-[var(--accent)] bg-[var(--accent)] font-semibold text-[#121212]'
+                    ? 'border-[var(--accent)] bg-[var(--accent)] font-semibold text-[var(--accent-text,#121212)]'
                     : 'border-[var(--border)] text-[var(--accent)] hover:bg-[var(--surface-2)]'
                 }`}
               >

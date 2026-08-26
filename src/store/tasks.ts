@@ -200,7 +200,20 @@ export const useTasksStore = create<TasksState>()(
         toDelete.forEach((t) => t.images.forEach((url) => deleteTaskImage(url).catch(() => {})))
         const uid = getUid()
         if (uid) {
-          toDelete.forEach((t) => removeTask(uid, t.id).catch(() => {}))
+          const isOnline = useOfflineStore.getState().isOnline
+          toDelete.forEach((t) => {
+            if (isOnline) {
+              removeTask(uid, t.id).catch(() => {})
+            } else {
+              useOfflineStore.getState().addPendingOperation({
+                id: generateOperationId(),
+                type: 'task',
+                action: 'delete',
+                data: { id: t.id, task: t },
+                timestamp: Date.now(),
+              })
+            }
+          })
         }
       },
       reorderTasks: (oldIndex, newIndex) => {

@@ -10,6 +10,7 @@ import UpdateModal from './components/ui/UpdateModal'
 import SplashScreen from './components/ui/SplashScreen'
 import Toast from './components/ui/Toast'
 import FoxPanel from './components/ui/FoxPanel'
+import AchievementPopup from './components/ui/AchievementPopup'
 import { useAuthStore } from './store/auth'
 import { useUIStore } from './store/ui'
 import { useSectionsStore } from './store/sections'
@@ -17,11 +18,11 @@ import { useTutorialStore } from './store/tutorial'
 import { useSettingsStore } from './store/settings'
 import { useTasksStore } from './store/tasks'
 import { applyTheme } from './lib/themes'
-import { startOfDay, sameDay } from './lib/dateUtils'
 import { scheduleDailyReminders } from './lib/notifications'
-import { updateWidgetData } from './lib/widget'
 import { initNetworkListener } from './store/offline'
 import { checkAutoBackup } from './lib/backup'
+import { evaluateAchievements } from './lib/achievements'
+import { useFoxSkinsStore } from './store/foxSkins'
 import { LocalNotifications } from '@capacitor/local-notifications'
 
 
@@ -81,21 +82,31 @@ export default function App() {
     }
   }, [tasks, user, demo])
 
-  // Update widget when tasks change
   useEffect(() => {
-    if (user && !demo) {
-      // Calculate current streak
-      const doneOnDay = (d: Date) => tasks.some((t) => t.status === 'done' && t.completedAt && sameDay(t.completedAt, d))
-      let streak = 0
-      const cursor = startOfDay(new Date())
-      if (!doneOnDay(cursor)) cursor.setDate(cursor.getDate() - 1)
-      while (doneOnDay(cursor)) {
-        streak++
-        cursor.setDate(cursor.getDate() - 1)
-      }
-      updateWidgetData(tasks, streak)
+    if (!user || demo || tasks.length === 0) return
+    const fresh = evaluateAchievements(tasks)
+    for (const a of fresh) {
+      useFoxSkinsStore.getState().addCoins(a.reward)
+      window.dispatchEvent(new CustomEvent('tasklex:achievement', { detail: a }))
     }
   }, [tasks, user, demo])
+
+  useEffect(() => {
+    if (!user || demo) return
+    const check = () => {
+      const fresh = evaluateAchievements(useTasksStore.getState().tasks)
+      for (const a of fresh) {
+        useFoxSkinsStore.getState().addCoins(a.reward)
+        window.dispatchEvent(new CustomEvent('tasklex:achievement', { detail: a }))
+      }
+    }
+    const interval = setInterval(check, 60000)
+    window.addEventListener('focus', check)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', check)
+    }
+  }, [user, demo])
 
   useEffect(() => {
     if (!user || demo) return
@@ -261,6 +272,7 @@ export default function App() {
       <Tutorial />
       <UpdateModal forceOpen={updateModalOpen} onClose={closeUpdateModal} />
       <Toast />
+      <AchievementPopup />
       <FoxPanel />
     </div>
     </>

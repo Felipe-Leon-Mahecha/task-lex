@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type TouchEvent } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { LayoutDashboard, Archive, Settings, X, Plus, Star, MessageSquareHeart, GripVertical, BarChart3, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, Archive, Settings, X, Plus, Star, MessageSquareHeart, GripVertical, BarChart3, ShoppingBag, type LucideIcon } from 'lucide-react'
 import { useThemeStore } from '../../store/theme'
 import { useUIStore } from '../../store/ui'
 import { useSectionsStore } from '../../store/sections'
@@ -9,6 +9,7 @@ import { hexToRgba } from '../../lib/image'
 import { APP_NAME, APP_VERSION } from '../../lib/appInfo'
 import type { ThemeConfig } from '../../types/task'
 import NewSectionModal from './NewSectionModal'
+import FoxShop from '../ui/FoxShop'
 
 type Themes = Record<string, ThemeConfig>
 
@@ -117,6 +118,7 @@ export default function Sidebar() {
   const open = useUIStore((s) => s.sidebarOpen)
   const close = useUIStore((s) => s.closeSidebar)
   const [newOpen, setNewOpen] = useState(false)
+  const [shopOpen, setShopOpen] = useState(false)
   const touchX = useRef<number | null>(null)
   const touchY = useRef<number | null>(null)
 
@@ -163,13 +165,22 @@ export default function Sidebar() {
             <img src="/icons/icon-192.png" alt="Flux" className="h-8 w-8 rounded-lg" />
             <span className="text-sm font-bold tracking-tight">Flux</span>
           </div>
-          <button
-            onClick={close}
-            className="rounded-full p-2 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-            aria-label="Cerrar menú"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => { setShopOpen(true); close() }}
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/20"
+              aria-label="Tienda Fox"
+            >
+              <ShoppingBag className="h-4 w-4" />
+            </button>
+            <button
+              onClick={close}
+              className="rounded-full p-2 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+              aria-label="Cerrar menú"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <NavList onNavigate={close} />
@@ -192,9 +203,18 @@ export default function Sidebar() {
         </Link>
       </aside>
       <aside className="hidden w-64 shrink-0 flex-col gap-2 border-r border-[var(--border)] p-4 sm:flex">
-        <div className="mb-4 mt-2 flex shrink-0 items-center gap-2 px-2">
-          <img src="/icons/icon-192.png" alt="Flux" className="h-8 w-8 rounded-lg" />
-          <span className="text-sm font-bold tracking-tight">Flux</span>
+        <div className="mb-4 mt-2 flex shrink-0 items-center justify-between px-2">
+          <div className="flex items-center gap-2">
+            <img src="/icons/icon-192.png" alt="Flux" className="h-8 w-8 rounded-lg" />
+            <span className="text-sm font-bold tracking-tight">Flux</span>
+          </div>
+          <button
+            onClick={() => setShopOpen(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/20"
+            aria-label="Tienda Fox"
+          >
+            <ShoppingBag className="h-4 w-4" />
+          </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <NavList />
@@ -213,6 +233,7 @@ export default function Sidebar() {
         </Link>
       </aside>
       <NewSectionModal open={newOpen} onClose={() => setNewOpen(false)} />
+      {shopOpen && <FoxShop onClose={() => setShopOpen(false)} />}
     </>
   )
 }

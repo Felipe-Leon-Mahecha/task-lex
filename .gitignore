@@ -13,6 +13,8 @@ dev.log
 
 # Secrets de Firebase (regenerar o copiar localmente al clonar)
 android/app/google-services.json
+serviceAccount.json
+*-firebase-adminsdk*.json
 
 # Android / Capacitor
 android/.gradle

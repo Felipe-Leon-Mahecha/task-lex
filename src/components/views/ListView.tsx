@@ -24,10 +24,10 @@ function SortableTaskCard({ task, onToggle, onEdit, onDelete, onArchive, onDupli
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style}>
       <div className="relative group">
         <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-8 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <div {...listeners} className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-[var(--surface-2)]">
+          <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-[var(--surface-2)]">
             <GripVertical className="h-4 w-4 text-[var(--text-muted)]" />
           </div>
         </div>
@@ -65,7 +65,7 @@ export default function ListView({
   onReorder?: (oldIndex: number, newIndex: number) => void
 }) {
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })

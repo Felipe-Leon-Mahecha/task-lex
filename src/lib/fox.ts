@@ -1,3 +1,5 @@
+import { getSkinById, getDefaultSkin } from './foxSkins'
+
 export type FoxState =
   | 'idle'
   | 'alerta'
@@ -220,6 +222,7 @@ const FOX_STATES: FoxStateConfig[] = [
 export function getFoxState(): { state: FoxStateConfig; dialogue: string } {
   const now = new Date()
   const hour = now.getHours()
+  const equippedImage = getEquippedSkinImage()
 
   const lastOpen = localStorage.getItem('flux-last-open')
   const daysSinceOpen = lastOpen
@@ -229,7 +232,7 @@ export function getFoxState(): { state: FoxStateConfig; dialogue: string } {
   if (daysSinceOpen >= 3) {
     const states = [FOX_STATES.find((s) => s.id === 'enojado')!, FOX_STATES.find((s) => s.id === 'llorando')!]
     const state = states[Math.floor(Math.random() * states.length)]
-    return { state, dialogue: state.dialogues[Math.floor(Math.random() * state.dialogues.length)] }
+    return { state: { ...state, image: equippedImage }, dialogue: state.dialogues[Math.floor(Math.random() * state.dialogues.length)] }
   }
 
   const saludo = FOX_STATES.find((s) => s.id === 'saludo')!
@@ -238,7 +241,7 @@ export function getFoxState(): { state: FoxStateConfig; dialogue: string } {
     const lastSaludo = localStorage.getItem('fox-last-saludo')
     if (lastSaludo !== today) {
       localStorage.setItem('fox-last-saludo', today)
-      return { state: saludo, dialogue: saludo.dialogues[Math.floor(Math.random() * saludo.dialogues.length)] }
+      return { state: { ...saludo, image: equippedImage }, dialogue: saludo.dialogues[Math.floor(Math.random() * saludo.dialogues.length)] }
     }
   }
 
@@ -248,20 +251,21 @@ export function getFoxState(): { state: FoxStateConfig; dialogue: string } {
     if (lastEstirandose !== today && Math.random() > 0.5) {
       localStorage.setItem('fox-last-estirandose', today)
       const state = FOX_STATES.find((s) => s.id === 'estirandose')!
-      return { state, dialogue: state.dialogues[Math.floor(Math.random() * state.dialogues.length)] }
+      return { state: { ...state, image: equippedImage }, dialogue: state.dialogues[Math.floor(Math.random() * state.dialogues.length)] }
     }
   }
 
   const idle = FOX_STATES.find((s) => s.id === 'idle')!
-  return { state: idle, dialogue: idle.dialogues[Math.floor(Math.random() * idle.dialogues.length)] }
+  return { state: { ...idle, image: equippedImage }, dialogue: idle.dialogues[Math.floor(Math.random() * idle.dialogues.length)] }
 }
 
 export function getFoxStateForContext(
   context: 'parsing' | 'processing' | 'done' | 'error' | 'notification' | 'completed' | 'widget'
 ): { state: FoxStateConfig; dialogue: string } {
+  const equippedImage = getEquippedSkinImage()
   const pick = (id: FoxState) => {
     const state = FOX_STATES.find((s) => s.id === id)!
-    return { state, dialogue: state.dialogues[Math.floor(Math.random() * state.dialogues.length)] }
+    return { state: { ...state, image: equippedImage }, dialogue: state.dialogues[Math.floor(Math.random() * state.dialogues.length)] }
   }
 
   switch (context) {
@@ -289,6 +293,7 @@ export function getFoxStateForContext(
 function getWidgetFox(): { state: FoxStateConfig; dialogue: string } {
   const now = new Date()
   const hour = now.getHours()
+  const equippedImage = getEquippedSkinImage()
 
   const lastOpen = localStorage.getItem('flux-last-open')
   const daysSinceOpen = lastOpen
@@ -298,18 +303,18 @@ function getWidgetFox(): { state: FoxStateConfig; dialogue: string } {
   if (daysSinceOpen >= 3) {
     const states = [FOX_STATES.find((s) => s.id === 'enojado')!, FOX_STATES.find((s) => s.id === 'llorando')!]
     const state = states[Math.floor(Math.random() * states.length)]
-    return { state, dialogue: state.dialogues[Math.floor(Math.random() * state.dialogues.length)] }
+    return { state: { ...state, image: equippedImage }, dialogue: state.dialogues[Math.floor(Math.random() * state.dialogues.length)] }
   }
 
   if (hour >= 3 && hour < 7) {
     const cafe = FOX_STATES.find((s) => s.id === 'cafe')!
-    return { state: cafe, dialogue: cafe.dialogues[Math.floor(Math.random() * cafe.dialogues.length)] }
+    return { state: { ...cafe, image: equippedImage }, dialogue: cafe.dialogues[Math.floor(Math.random() * cafe.dialogues.length)] }
   }
 
   const widgetStates = FOX_STATES.filter((s) => s.widgetOnly && s.id !== 'enojado' && s.id !== 'llorando' && s.id !== 'cafe')
   const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24))
   const state = widgetStates[dayOfYear % widgetStates.length]
-  return { state, dialogue: state.dialogues[Math.floor(Math.random() * state.dialogues.length)] }
+  return { state: { ...state, image: equippedImage }, dialogue: state.dialogues[Math.floor(Math.random() * state.dialogues.length)] }
 }
 
 export function setFoxProcessingStart() {
@@ -326,4 +331,19 @@ export function recordAppOpen() {
 
 export function getAllFoxStates() {
   return FOX_STATES
+}
+
+export function getEquippedSkinImage(): string {
+  try {
+    const raw = localStorage.getItem('task-lex-fox-skins')
+    if (raw) {
+      const data = JSON.parse(raw)
+      const equipped = data?.state?.equipped
+      if (equipped && equipped !== 'idle') {
+        const skin = getSkinById(equipped)
+        if (skin) return skin.image
+      }
+    }
+  } catch {}
+  return getDefaultSkin().image
 }

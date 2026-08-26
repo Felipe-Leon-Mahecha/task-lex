@@ -1,12 +1,10 @@
-import { memo, useState, useRef } from 'react'
+import { memo, useState } from 'react'
 import { Archive, Check, Copy, MoveRight, Pencil, Share2, Star, Trash2 } from 'lucide-react'
 import type { Priority, Status, Task } from '../../types/task'
 import PomodoroTimer from './PomodoroTimer'
 import MoveTaskModal from './MoveTaskModal'
 import Modal from '../ui/Modal'
 import { shareTask } from '../../lib/share'
-import { hapticImpact } from '../../lib/haptics'
-import { ImpactStyle } from '@capacitor/haptics'
 
 const priorityMeta: Record<Priority, { label: string; className: string }> = {
   baja: { label: 'Baja', className: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300' },
@@ -62,9 +60,6 @@ export default memo(function TaskCard({
   const doneCount = task.subtasks.filter((s) => s.done).length
   const pm = priorityMeta[task.priority]
   const [moveOpen, setMoveOpen] = useState(false)
-  const touchStartX = useRef<number>(0)
-  const touchStartY = useRef<number>(0)
-  const [swipeOffset, setSwipeOffset] = useState(0)
   const due = task.dueDate
     ? new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(
         task.dueDate,
@@ -73,47 +68,9 @@ export default memo(function TaskCard({
   const urgency = getDueUrgency(task.dueDate, task.status)
   const [preview, setPreview] = useState<string | null>(null)
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-  }
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    const deltaX = e.touches[0].clientX - touchStartX.current
-    const deltaY = e.touches[0].clientY - touchStartY.current
-    
-    // Solo permitir swipe horizontal
-    if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
-      setSwipeOffset(deltaX)
-    }
-  }
-
-  const handleTouchEnd = () => {
-    const deltaX = swipeOffset
-    
-    if (Math.abs(deltaX) > 80) {
-      if (deltaX > 0) {
-        onToggle(task.id)
-        hapticImpact(ImpactStyle.Medium)
-      } else {
-        onArchive(task.id)
-        hapticImpact(ImpactStyle.Light)
-      }
-    }
-    
-    setSwipeOffset(0)
-  }
-
   return (
-    <div 
-      className={`card p-5 ${task.status === 'done' ? 'opacity-55' : ''}`}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      style={{ transform: `translateX(${swipeOffset}px)`, transition: swipeOffset === 0 ? 'transform 0.2s' : 'none' }}
-    >
+    <div className={`card p-5 ${task.status === 'done' ? 'opacity-55' : ''}`}>
       <div className="flex items-start justify-between gap-3">
-        {/* Columna de texto: usa casi todo el ancho, solo cede ~36px a la columna de íconos */}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2.5">
             <span
@@ -182,20 +139,21 @@ export default memo(function TaskCard({
           )}
         </div>
 
-        {/* Columna de íconos: vertical, angosta, no le roba ancho al texto */}
         <div className="flex shrink-0 flex-col items-center gap-1.5">
           <button
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={() => onToggle(task.id)}
             title="Cambiar estado"
-            className={`flex h-7 w-7 items-center justify-center rounded-full border transition-colors ${
+            className={`flex h-11 w-11 items-center justify-center rounded-full border transition-colors ${
               task.status === 'done'
-                ? 'border-[var(--accent)] bg-[var(--accent)] text-[#121212]'
+                ? 'border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text,#121212)]'
                 : 'border-[var(--border)] text-transparent hover:border-[var(--accent)]'
             }`}
           >
             <Check className="h-4 w-4" />
           </button>
           <button
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={() => onEdit(task)}
             className="rounded p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)]"
           >
@@ -203,6 +161,7 @@ export default memo(function TaskCard({
           </button>
           {onDuplicate && (
             <button
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={() => onDuplicate(task)}
               title="Duplicar"
               className="rounded p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)]"
@@ -212,6 +171,7 @@ export default memo(function TaskCard({
           )}
           {onMove && (
             <button
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={() => setMoveOpen(true)}
               title="Mover a otro apartado"
               className="rounded p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)]"
@@ -220,6 +180,7 @@ export default memo(function TaskCard({
             </button>
           )}
           <button
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={() => shareTask(task.title, task.description)}
             title="Compartir"
             className="rounded p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)]"
@@ -227,12 +188,14 @@ export default memo(function TaskCard({
             <Share2 className="h-4 w-4" />
           </button>
           <button
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={() => onDelete(task.id)}
             className="rounded p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-red-400"
           >
             <Trash2 className="h-4 w-4" />
           </button>
           <button
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={() => onArchive(task.id)}
             title="Archivar"
             className="rounded p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--accent)]"

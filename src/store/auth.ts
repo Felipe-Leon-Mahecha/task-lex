@@ -15,6 +15,7 @@ import { auth } from '../lib/firebase'
 import { setSessionUser } from '../lib/session'
 import { requestPermission } from '../lib/notifications'
 import { startSync, stopSync } from '../lib/sync'
+import { startFoxSkinsSync, stopFoxSkinsSync } from './foxSkins'
 
 interface AuthState {
   user: User | null
@@ -42,9 +43,11 @@ export const useAuthStore = create<AuthState>()((set) => ({
       setSessionUser(user)
       if (user) {
         startSync(user.uid)
+        startFoxSkinsSync()
         requestPermission().catch(() => {})
       } else {
         stopSync()
+        stopFoxSkinsSync()
       }
       set({ user, loading: false })
     })

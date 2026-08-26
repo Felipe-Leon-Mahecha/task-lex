@@ -8,11 +8,18 @@ interface UpdateModalProps {
 }
 
 const CHANGELOG: Record<string, string[]> = {
+  '5.0.0': [
+    '🦊 Fox IA completa: Mi día (planificador), Desglosar, Energía, Coach y Chat',
+    '🔄 Reagendamiento inteligente: Fox reorganiza tus tareas vencidas',
+    '🌅 Briefing diario: Fox te saluda con el resumen de tu día',
+    '🏆 13 logros con recompensas en monedas y popup de celebración',
+    '👑 Flux Premium con suscripción mensual y anual',
+    '🛍️ Tienda de skins con inventario, monedas y packs',
+    '🐛 Compra de monedas arreglada en la app Android',
+  ],
   '4.0.0': [
     '🦊 Fox: asistente de IA para crear tareas con lenguaje natural',
     '🎤 Dictado por voz con reconocimiento nativo de Android',
-    '🖼️ Widget: corrección de crash, tocar abre la app',
-    '💡 Banner informativo del widget en el Dashboard',
     '🎨 Icono de zorro como botón flotante de Fox',
   ],
   '3.2.0': [

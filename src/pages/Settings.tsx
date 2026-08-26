@@ -1,8 +1,10 @@
 import { useRef, useState, type ChangeEvent } from 'react'
-import { Bell, BellOff, Calendar, Download, Palette, Play, Upload, Trash2, Volume2, VolumeX } from 'lucide-react'
+import { Bell, BellOff, Calendar, Download, Palette, Play, Upload, Trash2, Volume2, VolumeX, UserX } from 'lucide-react'
 import { exportJSON, importJSON } from '../lib/backup'
 import { disableAllReminders, requestPermission } from '../lib/notifications'
 import { requestCalendarPermissions } from '../lib/calendar'
+import { deleteAccount, clearLocalData } from '../lib/deleteAccount'
+import { useAuthStore } from '../store/auth'
 import { useSectionsStore } from '../store/sections'
 import { useSettingsStore } from '../store/settings'
 import { useTutorialStore } from '../store/tutorial'
@@ -10,6 +12,7 @@ import { ICON_MAP } from '../lib/sections'
 import Modal from '../components/ui/Modal'
 import IconPicker from '../components/layout/IconPicker'
 import ThemeSelector from '../components/ui/ThemeSelector'
+import InviteCard from '../components/ui/InviteCard'
 
 export default function Settings() {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -47,6 +50,29 @@ export default function Settings() {
   const setFoxEnabled = useSettingsStore((s) => s.setFoxEnabled)
   const setFoxRandomMessages = useSettingsStore((s) => s.setFoxRandomMessages)
   const setFoxExpressions = useSettingsStore((s) => s.setFoxExpressions)
+  const user = useAuthStore((s) => s.user)
+  const [accountModalOpen, setAccountModalOpen] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
+  const [accountError, setAccountError] = useState<string | null>(null)
+
+  const handleDeleteAccount = async () => {
+    if (!user || deletingAccount) return
+    setDeletingAccount(true)
+    setAccountError(null)
+    const res = await deleteAccount(user.uid)
+    if (res === 'ok') {
+      clearLocalData()
+      window.location.reload()
+      return
+    }
+    setDeletingAccount(false)
+    setAccountModalOpen(false)
+    setAccountError(
+      res === 'recent-login'
+        ? 'Por seguridad tu sesión es demasiado antigua para borrar la cuenta. Cierra sesión, vuelve a entrar e inténtalo otra vez.'
+        : 'No se pudo eliminar la cuenta. Revisa tu conexión e inténtalo de nuevo.',
+    )
+  }
 
   const onImport = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -173,17 +199,21 @@ export default function Settings() {
               <p className="text-sm">Recordatorios diarios</p>
               <p className="text-xs text-[var(--text-muted)]">Veces al día para recordar tareas activas.</p>
             </div>
-            <select
-              value={dailyReminderFrequency}
-              onChange={(e) => setDailyReminderFrequency(Number(e.target.value))}
-              className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
-            >
-              <option value={1}>1 vez</option>
-              <option value={2}>2 veces</option>
-              <option value={3}>3 veces</option>
-              <option value={4}>4 veces</option>
-              <option value={5}>5 veces</option>
-            </select>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setDailyReminderFrequency(n)}
+                  className={`h-8 w-8 rounded-lg text-xs font-bold transition-all ${
+                    dailyReminderFrequency === n
+                      ? 'bg-[var(--accent)] text-[var(--accent-text,#121212)]'
+                      : 'bg-[var(--surface-2)] text-[var(--text-muted)]'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -411,6 +441,29 @@ export default function Settings() {
         )}
       </div>
 
+      {accountError && (
+        <div className="card mb-4 max-w-lg border-red-500/40 p-5">
+          <p className="text-sm text-red-400">{accountError}</p>
+        </div>
+      )}
+
+      <InviteCard />
+
+      <div className="card mb-4 max-w-lg border-red-500/30 p-5">
+        <p className="flex items-center gap-2 text-sm font-semibold text-red-400">
+          <UserX className="h-4 w-4" /> Eliminar cuenta
+        </p>
+        <p className="mt-1 text-sm text-[var(--text-muted)]">
+          Borra permanentemente tu cuenta, todas tus tareas, apartados, monedas y skins. Esta acción no se puede deshacer.
+        </p>
+        <button
+          onClick={() => setAccountModalOpen(true)}
+          className="mt-4 flex items-center gap-2 rounded-full border border-red-500/50 px-4 py-2 text-sm font-semibold text-red-400 transition-colors hover:bg-red-500/10"
+        >
+          <Trash2 className="h-4 w-4" /> Eliminar mi cuenta
+        </button>
+      </div>
+
       <Modal
         open={iconEditor !== null}
         onClose={() => setIconEditor(null)}
@@ -468,6 +521,38 @@ export default function Settings() {
         title="Personalizar tema"
       >
         <ThemeSelector />
+      </Modal>
+
+      <Modal
+        open={accountModalOpen}
+        onClose={() => { if (!deletingAccount) setAccountModalOpen(false) }}
+        title="Eliminar cuenta"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-[var(--text-muted)]">
+            Esta acción es <span className="font-bold text-red-400">definitiva</span>. Se borrarán tu cuenta, todas tus tareas,
+            apartados, fotos adjuntas, monedas y skins desbloqueadas. No habrá forma de recuperar nada.
+          </p>
+          <p className="text-sm text-[var(--text-muted)]">
+            Si solo quieres cambiar de cuenta, usa "Cerrar sesión" en lugar de eliminar.
+          </p>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={handleDeleteAccount}
+              disabled={deletingAccount}
+              className="flex items-center justify-center gap-2 rounded-full bg-red-500 py-2.5 text-sm font-bold text-white transition-opacity hover:bg-red-600 disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" /> {deletingAccount ? 'Eliminando...' : 'Sí, eliminar todo definitivamente'}
+            </button>
+            <button
+              onClick={() => setAccountModalOpen(false)}
+              disabled={deletingAccount}
+              className="rounded-full border border-[var(--border)] py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)] disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   )

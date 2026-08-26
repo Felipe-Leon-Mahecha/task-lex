@@ -4,6 +4,7 @@ import { useTasksStore } from '../../store/tasks'
 import { useSettingsStore } from '../../store/settings'
 import { AmbientPlayer, SOUND_OPTIONS, type SoundId } from '../../lib/focusSounds'
 import { addFocusMinutes } from '../../lib/focusStats'
+import { useFoxSkinsStore } from '../../store/foxSkins'
 import type { Task } from '../../types/task'
 import Select from './Select'
 
@@ -97,6 +98,7 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
         },
       })
       addFocusMinutes(focusMinutes)
+      useFoxSkinsStore.getState().recordFocusReward()
       setPhase('break')
       setRemaining(shortBreak * 60)
     } else {
@@ -262,7 +264,7 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
                 onClick={() => toggleSound(s.id)}
                 className={`rounded-full border px-3 py-1 text-xs transition-colors ${
                   sound === s.id && playing
-                    ? 'border-[var(--accent)] bg-[var(--accent)] font-semibold text-[#121212]'
+                    ? 'border-[var(--accent)] bg-[var(--accent)] font-semibold text-[var(--accent-text,#121212)]'
                     : 'border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]'
                 }`}
               >

@@ -39,7 +39,7 @@ export default function IconPicker({
                 onClick={() => onChange(key)}
                 className={`flex h-10 w-10 items-center justify-center rounded-lg border transition-colors ${
                   value === key
-                    ? 'border-[var(--accent)] bg-[var(--accent)] text-[#121212]'
+                    ? 'border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-text,#121212)]'
                     : 'border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]'
                 }`}
               >

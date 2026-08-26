@@ -68,9 +68,8 @@ export const useSectionsStore = create<SectionsState>()(
         }
       },
       syncRemote: (remote) =>
-        set((s) => {
-          const map = new Map(s.sections.map((x) => [x.id, x]))
-          remote.forEach((r) => map.set(r.id, r))
+        set(() => {
+          const map = new Map(remote.map((r) => [r.id, r]))
           return { sections: Array.from(map.values()).sort((a, b) => a.order - b.order) }
         }),
     }),
