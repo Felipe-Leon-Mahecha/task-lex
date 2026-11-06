@@ -1,20 +1,22 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Flux</string>
-    <string name="title_activity_main">Flux</string>
+    <string name="app_name">Quacker</string>
+    <string name="title_activity_main">Quacker</string>
     <string name="package_name">com.tasklex.app</string>
     <string name="custom_url_scheme">com.tasklex.app</string>
     <string name="shortcut_create_task">Crear tarea</string>
-    <string name="shortcut_create_task_long">Crea una nueva tarea en Flux</string>
+    <string name="shortcut_create_task_long">Crea una nueva tarea en Quacker</string>
     <string name="shortcut_view_today">Ver hoy</string>
-    <string name="shortcut_view_today_long">Ve las tareas de hoy en Flux</string>
-    <string name="shortcut_open_app">Abrir Flux</string>
-    <string name="shortcut_open_app_long">Abre la app Flux</string>
+    <string name="shortcut_view_today_long">Ve las tareas de hoy en Quacker</string>
+    <string name="shortcut_create_note">Crear nota</string>
+    <string name="shortcut_create_note_long">Crea una nueva nota en Quacker</string>
+    <string name="shortcut_start_focus">Iniciar enfoque</string>
+    <string name="shortcut_start_focus_long">Inicia una sesión de enfoque en Quacker</string>
+    <string name="shortcut_open_app">Abrir Quacker</string>
+    <string name="shortcut_open_app_long">Abre la app Quacker</string>
     <string name="auto_backup">Backup automático</string>
-    <string name="app_actions_label">Crear tarea en Flux</string>
-    <string name="app_actions_description">Crea una tarea rápida en Flux por voz o texto</string>
-    <string name="widget_desc_2x2">Fox — solo la mascota</string>
-    <string name="widget_desc_2x1">Fox con racha y tareas pendientes</string>
-    <string name="widget_desc_3x1">Fox con estadísticas y próximas tareas</string>
-    <string name="widget_desc_4x1">Estadísticas completas y lista de tareas</string>
+    <string name="app_actions_label">Crear tarea en Quacker</string>
+    <string name="app_actions_description">Crea una tarea rápida en Quacker por voz o texto</string>
+    <string name="widget_name">Mascota y pendientes</string>
+    <string name="widget_desc_quacker">Tu mascota activa y el total de tareas pendientes</string>
 </resources>

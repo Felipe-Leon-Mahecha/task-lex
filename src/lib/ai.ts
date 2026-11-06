@@ -1,10 +1,8 @@
 import { z } from 'zod'
-import { Capacitor } from '@capacitor/core'
+import { apiUrl } from './apiUrl'
+import { auth } from './firebase'
 
-const API_HOST = Capacitor.getPlatform() === 'android'
-  ? 'task-lex.vercel.app'
-  : window.location.host
-const PARSE_URL = `${window.location.protocol}//${API_HOST}/api/parse-task`
+const PARSE_URL = apiUrl('/api/parse-task')
 
 export const ParsedTaskSchema = z.object({
   title: z.string().min(1).max(100),
@@ -26,9 +24,19 @@ export const ParsedTaskSchema = z.object({
 export type ParsedTask = z.infer<typeof ParsedTaskSchema>
 
 export async function parseTaskWithAI(prompt: string): Promise<ParsedTask> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (!auth?.currentUser) throw new Error('Sesión no iniciada. Vuelve a entrar a tu cuenta.')
+  try {
+    const token = await auth.currentUser.getIdToken()
+    if (!token) throw new Error('Sesión expirada. Vuelve a entrar a tu cuenta.')
+    headers.Authorization = `Bearer ${token}`
+  } catch (e) {
+    if (e instanceof Error && /sesi[oó]n/i.test(e.message)) throw e
+    throw new Error('Sesión expirada. Vuelve a entrar a tu cuenta.')
+  }
   const res = await fetch(PARSE_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ prompt }),
   })
 

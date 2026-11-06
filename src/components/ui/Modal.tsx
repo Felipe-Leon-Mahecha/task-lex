@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
 export default function Modal({
@@ -14,14 +15,29 @@ export default function Modal({
   children: ReactNode
   className?: string
 }) {
+  useEffect(() => {
+    if (!open) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open, onClose])
+
   if (!open) return null
-  return (
+  return createPortal((
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className={`card max-h-[90vh] w-full max-w-lg overflow-y-auto p-5 animate-in zoom-in-95 slide-in-from-bottom-4 duration-200 ${className ?? ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className={`card max-h-[min(90dvh,calc(100dvh-2rem))] w-full min-w-0 max-w-lg overflow-x-hidden overflow-y-auto p-5 animate-in zoom-in-95 slide-in-from-bottom-4 duration-200 sm:p-6 ${className ?? ''}`}
         onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
@@ -39,5 +55,5 @@ export default function Modal({
         {children}
       </div>
     </div>
-  )
+  ), document.body)
 }

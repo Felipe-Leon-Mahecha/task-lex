@@ -3,8 +3,8 @@ import { ArrowLeft, ArrowRight, Copy, MoveRight, RefreshCw, Star } from 'lucide-
 import type { Status, Task } from '../../types/task'
 import MoveTaskModal from '../task/MoveTaskModal'
 
-const order: Status[] = ['pending', 'in_progress', 'done']
-const colLabel: Record<Status, string> = { pending: 'Pendiente', in_progress: 'En progreso', done: 'Hecha' }
+const order: Status[] = ['pending', 'in_progress', 'waiting', 'done']
+const colLabel: Record<Status, string> = { pending: 'Pendiente', in_progress: 'En progreso', waiting: 'En espera', done: 'Hecha' }
 
 function MiniCard({
   task,
@@ -36,7 +36,7 @@ function MiniCard({
             <ArrowLeft className="h-3.5 w-3.5" />
           </button>
           <button
-            disabled={idx === 2}
+            disabled={idx === order.length - 1}
             onClick={() => onMove(task.id, 1)}
             className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--accent)] disabled:opacity-30"
           >
@@ -62,6 +62,7 @@ function MiniCard({
         open={moveOpen}
         onClose={() => setMoveOpen(false)}
         currentId={task.sectionId}
+        taskTitle={task.title}
         onMove={(sectionId) => onMoveSection(task.id, sectionId)}
       />
     </div>
@@ -80,7 +81,7 @@ export default function BoardView({
   onDuplicate: (task: Task) => void
 }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {order.map((c) => {
         const colTasks = tasks.filter((t) => t.status === c)
         return (

@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /users/{userId}/{collection}/{document} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId
+        && collection in ['tasks', 'sections', 'settings', 'focus', 'seasons', 'notes', 'note_folders', 'notesMeta', 'weeklyPlan'];
+    }
+    match /users/{userId}/foxSkins/{document} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+      allow create, update: if false;
+    }
+    match /reviews/{reviewId} {
+      allow read, write: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

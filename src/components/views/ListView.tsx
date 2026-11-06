@@ -6,7 +6,7 @@ import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalList
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical } from 'lucide-react'
 
-function SortableTaskCard({ task, onToggle, onEdit, onDelete, onArchive, onDuplicate, onMove }: {
+function SortableTaskCard({ task, onToggle, onEdit, onDelete, onArchive, onDuplicate, onMove, onSelect, selected, selectionMode }: {
   task: Task
   onToggle: (id: string) => void
   onEdit: (task: Task) => void
@@ -14,6 +14,9 @@ function SortableTaskCard({ task, onToggle, onEdit, onDelete, onArchive, onDupli
   onArchive: (id: string) => void
   onDuplicate?: (task: Task) => void
   onMove?: (id: string, sectionId: string) => void
+  onSelect?: (id: string) => void
+  selected?: boolean
+  selectionMode?: boolean
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id })
   
@@ -39,6 +42,9 @@ function SortableTaskCard({ task, onToggle, onEdit, onDelete, onArchive, onDupli
           onArchive={onArchive}
           onDuplicate={onDuplicate}
           onMove={onMove}
+          onSelect={onSelect}
+          selected={selected}
+          selectionMode={selectionMode}
         />
       </div>
     </div>
@@ -54,6 +60,9 @@ export default function ListView({
   onDuplicate,
   onMove,
   onReorder,
+  selectedIds = [],
+  onSelect,
+  selectionMode = false,
 }: {
   tasks: Task[]
   onToggle: (id: string) => void
@@ -63,6 +72,9 @@ export default function ListView({
   onDuplicate?: (task: Task) => void
   onMove?: (id: string, sectionId: string) => void
   onReorder?: (oldIndex: number, newIndex: number) => void
+  selectedIds?: string[]
+  onSelect?: (id: string) => void
+  selectionMode?: boolean
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -102,6 +114,9 @@ export default function ListView({
                 onArchive={onArchive}
                 onDuplicate={onDuplicate}
                 onMove={onMove}
+                onSelect={onSelect}
+                selected={selectedIds.includes(t.id)}
+                selectionMode={selectionMode}
               />
             </div>
           ))}

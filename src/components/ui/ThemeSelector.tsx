@@ -1,9 +1,10 @@
 import { Check, Lock, Palette } from 'lucide-react'
 import { useMemo, useState, useCallback } from 'react'
 import { useSettingsStore } from '../../store/settings'
-import { useFoxSkinsStore } from '../../store/foxSkins'
+import { useFoxSkinsStore, useInfiniteCoins } from '../../store/foxSkins'
 import { APP_THEMES, ACCENT_THEMES, applyAppTheme, applyAccentTheme } from '../../lib/themes'
 import type { AppThemeCategory, AccentThemeCategory } from '../../lib/themes'
+import { playPurchaseSound } from '../../lib/soundEffects'
 
 function hsvToRgb(h: number, s: number, v: number): [number, number, number] {
   s /= 100
@@ -28,12 +29,13 @@ function rgbToHex(r: number, g: number, b: number): string {
 function generateCustomAppColors(hue: number, sat: number, val: number) {
   const [r, g, b] = hsvToRgb(hue, sat, val)
   const hex = rgbToHex(r, g, b)
-  const bg = rgbToHex(...hsvToRgb(hue, Math.min(30, sat), Math.max(8, val * 0.12)))
-  const surface = rgbToHex(...hsvToRgb(hue, Math.min(35, sat), Math.max(12, val * 0.16)))
-  const surface2 = rgbToHex(...hsvToRgb(hue, Math.min(40, sat), Math.max(16, val * 0.2)))
-  const text = rgbToHex(...hsvToRgb(hue, Math.min(20, sat * 0.3), Math.min(95, val * 0.95)))
-  const textMuted = rgbToHex(...hsvToRgb(hue, Math.min(25, sat * 0.4), Math.min(70, val * 0.7)))
-  const border = rgbToHex(...hsvToRgb(hue, Math.min(40, sat), Math.max(20, val * 0.25)))
+  const depth = 8 + (Math.max(0, Math.min(100, val)) / 100) * 38
+  const bg = rgbToHex(...hsvToRgb(hue, Math.min(48, sat * 0.48), depth))
+  const surface = rgbToHex(...hsvToRgb(hue, Math.min(52, sat * 0.52), Math.min(60, depth + 5)))
+  const surface2 = rgbToHex(...hsvToRgb(hue, Math.min(56, sat * 0.56), Math.min(66, depth + 11)))
+  const text = rgbToHex(...hsvToRgb(hue, Math.min(12, sat * 0.12), 96))
+  const textMuted = rgbToHex(...hsvToRgb(hue, Math.min(20, sat * 0.2), 72))
+  const border = rgbToHex(...hsvToRgb(hue, Math.min(58, sat * 0.58), Math.min(70, depth + 15)))
   return { bg, surface, surface2, text, textMuted, accent: hex, border }
 }
 
@@ -43,42 +45,11 @@ export default function ThemeSelector() {
   const setAppThemeId = useSettingsStore((s) => s.setAppThemeId)
   const setAccentThemeId = useSettingsStore((s) => s.setAccentThemeId)
   const coins = useFoxSkinsStore((s) => s.coins)
+  const infinite = useInfiniteCoins()
   const themeUnlocked = useFoxSkinsStore((s) => s.themeUnlocked)
   const unlockTheme = useFoxSkinsStore((s) => s.unlockTheme)
   const [buyError, setBuyError] = useState(false)
-
-  if (!themeUnlocked) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-6 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)]/15">
-          <Lock className="h-6 w-6 text-[var(--accent)]" />
-        </div>
-        <h3 className="text-base font-bold">Personalización de tema bloqueada</h3>
-        <p className="max-w-[280px] text-xs leading-relaxed text-[var(--text-muted)]">
-          Desbloquea todos los colores base, pastel y el selector completo de acento para dejar la app a tu gusto.
-        </p>
-        <button
-          onClick={() => {
-            setBuyError(false)
-            if (!unlockTheme()) setBuyError(true)
-          }}
-          disabled={coins < 500}
-          className="mt-1 flex items-center gap-2 rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-bold text-[var(--bg)] transition-transform active:scale-95 disabled:opacity-40"
-        >
-          {coins >= 500 ? (
-            <>Desbloquear · 500 <img src="/coins/moneda.png" alt="moneda" className="h-4 w-4" /></>
-          ) : (
-            <><Palette className="h-4 w-4" /> Te faltan monedas</>
-          )}
-        </button>
-        <p className="text-[11px] text-[var(--text-muted)]">Tienes {coins} monedas</p>
-        {buyError && <p className="text-xs font-semibold text-red-400">No se pudo desbloquear, inténtalo de nuevo.</p>}
-      </div>
-    )
-  }
-
   const [activeTab, setActiveTab] = useState<'app' | 'accent'>('app')
-
   const savedCustom = useMemo(() => {
     try {
       const raw = localStorage.getItem('task-lex-custom-app-hsv')
@@ -150,6 +121,37 @@ export default function ThemeSelector() {
     base: 'Base',
     pastel: 'Pastel',
     custom: 'Personalizado',
+  }
+
+  if (!themeUnlocked) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)]/15">
+          <Lock className="h-6 w-6 text-[var(--accent)]" />
+        </div>
+        <h3 className="text-base font-bold">Personalización de tema bloqueada</h3>
+        <p className="max-w-[280px] text-xs leading-relaxed text-[var(--text-muted)]">
+          Desbloquea todos los colores base, pastel y el selector completo de acento para dejar la app a tu gusto.
+        </p>
+        <button
+          onClick={async () => {
+            setBuyError(false)
+            if (await unlockTheme()) playPurchaseSound()
+            else setBuyError(true)
+          }}
+          disabled={infinite ? false : coins < 500}
+          className="mt-1 flex items-center gap-2 rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-bold text-[var(--bg)] transition-transform active:scale-95 disabled:opacity-40"
+        >
+          {infinite || coins >= 500 ? (
+            <>Desbloquear · 500 <img src="/coins/moneda.png" alt="moneda" className="h-4 w-4" /></>
+          ) : (
+            <><Palette className="h-4 w-4" /> Te faltan monedas</>
+          )}
+        </button>
+        <p className="text-[11px] text-[var(--text-muted)]">Tienes {infinite ? '∞ monedas' : `${coins} monedas`}</p>
+        {buyError && <p className="text-xs font-semibold text-red-400">No se pudo desbloquear, inténtalo de nuevo.</p>}
+      </div>
+    )
   }
 
   return (
@@ -227,7 +229,7 @@ export default function ThemeSelector() {
                       <span className="text-xs text-[var(--text)] w-8 text-right">{customSat}%</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-[var(--text-muted)] w-12">Brillo</span>
+                      <span className="text-xs text-[var(--text-muted)] w-12">Luz UI</span>
                       <input
                         type="range"
                         min={5}

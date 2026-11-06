@@ -37,7 +37,7 @@ function beep() {
 function notify(msg: string) {
   beep()
   if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification('Flux', { body: msg })
+    new Notification('Quacker', { body: msg })
   }
 }
 

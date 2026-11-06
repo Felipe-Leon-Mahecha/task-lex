@@ -1,6 +1,6 @@
 export type SectionId = string
 export type Priority = 'baja' | 'media' | 'alta'
-export type Status = 'pending' | 'in_progress' | 'done'
+export type Status = 'pending' | 'in_progress' | 'waiting' | 'done'
 export type Recurrence = 'none' | 'daily' | 'weekly' | 'monthly'
 export type ViewMode = 'list' | 'board' | 'calendar' | 'gantt'
 
@@ -33,6 +33,8 @@ export interface Reminder {
   sentAt: Date | null
 }
 
+export type ReminderKind = 'notificacion' | 'alarma' | 'ambas'
+
 export interface Task {
   id: string
   sectionId: SectionId
@@ -44,8 +46,10 @@ export interface Task {
   status: Status
   recurrence: Recurrence
   focusDay: boolean
+  completeWithSubtasks?: boolean
   reminderLead: number | null
   reminder2HoursBefore: boolean
+  reminderKind?: ReminderKind
   notesLinks: LinkNote[]
   images: string[]
   pomodoro: PomodoroState
@@ -68,6 +72,7 @@ export interface ThemeConfig {
   border: string
   borderRadius: number
   darkMode: boolean
+  updatedAt?: number
 }
 
 export interface SectionMeta {

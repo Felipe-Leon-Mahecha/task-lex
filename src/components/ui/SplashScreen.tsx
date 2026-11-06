@@ -60,14 +60,14 @@ export default function SplashScreen() {
           <div className="absolute inset-0 animate-[spin_3s_linear_infinite] rounded-full border-2 border-[var(--accent)]/20 border-t-[var(--accent)]" style={{ animationDelay: '0.5s' }} />
           {/* Main logo container — entra justo cuando los fragmentos terminan de converger */}
           <div className="logo-settle relative flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--accent)]/70 shadow-[0_0_40px_-10px_var(--accent)]">
-            <img src="/icons/icon-192.png" alt="Flux" className="h-20 w-20 drop-shadow-lg" />
+            <img src="/icons/icon-192.png" alt="Quacker" className="h-20 w-20 drop-shadow-lg" />
           </div>
         </div>
 
         {/* Text with staggered animation */}
         <div className="space-y-3 text-center animate-in slide-in-from-bottom-4 duration-700 delay-200">
           <h1 className="text-4xl font-bold tracking-tight text-[var(--text)] bg-gradient-to-r from-[var(--text)] to-[var(--text-muted)] bg-clip-text text-transparent">
-            Flux
+            Quacker
           </h1>
           <p className="text-sm text-[var(--text-muted)] font-medium">Organiza tu vida, eleva tu productividad</p>
         </div>

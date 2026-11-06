@@ -3,7 +3,9 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithCredential,
+  signInWithCustomToken,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut as fbSignOut,
@@ -12,10 +14,12 @@ import {
 import { Capacitor } from '@capacitor/core'
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
 import { auth } from '../lib/firebase'
-import { setSessionUser } from '../lib/session'
+import { setSessionUser, getUid, getCacheUid, setCacheUid } from '../lib/session'
+import { resetUserData } from '../lib/userData'
 import { requestPermission } from '../lib/notifications'
 import { startSync, stopSync } from '../lib/sync'
 import { startFoxSkinsSync, stopFoxSkinsSync } from './foxSkins'
+import { startSeasonsSync, stopSeasonsSync } from './seasons'
 
 interface AuthState {
   user: User | null
@@ -26,6 +30,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<boolean>
   signUp: (email: string, password: string) => Promise<boolean>
   signInWithGoogle: () => Promise<boolean>
+  sendPasswordReset: (email: string) => Promise<boolean>
   signOut: () => Promise<void>
 }
 
@@ -40,15 +45,39 @@ export const useAuthStore = create<AuthState>()((set) => ({
       return
     }
     onAuthStateChanged(auth, (user) => {
-      setSessionUser(user)
-      if (user) {
-        startSync(user.uid)
-        startFoxSkinsSync()
-        requestPermission().catch(() => {})
-      } else {
+      const prevUid = getUid()
+      if (!user) {
+        if (prevUid) {
+          resetUserData()
+          setSessionUser(null)
+          stopSync()
+          stopFoxSkinsSync()
+          stopSeasonsSync()
+          window.location.reload()
+          return
+        }
+        resetUserData()
+        setSessionUser(null)
         stopSync()
         stopFoxSkinsSync()
+        stopSeasonsSync()
+        set({ user: null, loading: false })
+        return
       }
+      const cacheUid = getCacheUid()
+      if (cacheUid !== user.uid || (prevUid && prevUid !== user.uid)) {
+        resetUserData()
+        setCacheUid(user.uid)
+        setSessionUser(user)
+        window.location.reload()
+        return
+      }
+      setSessionUser(user)
+      setCacheUid(user.uid)
+      startSync(user.uid)
+      startFoxSkinsSync()
+      startSeasonsSync()
+      requestPermission().catch(() => {})
       set({ user, loading: false })
     })
   },
@@ -79,14 +108,25 @@ export const useAuthStore = create<AuthState>()((set) => ({
     set({ error: null })
     const native = Capacitor.isNativePlatform()
     try {
+      const desktop = (window as Window & { quackerDesktop?: { isApp?: boolean; signInWithGoogle?: () => Promise<string> } }).quackerDesktop
+      if (desktop?.isApp && desktop.signInWithGoogle) {
+        const customToken = await desktop.signInWithGoogle()
+        await signInWithCustomToken(auth!, customToken)
+        return true
+      }
       if (native) {
+        try {
+          await FirebaseAuthentication.signOut()
+        } catch {}
         const res = await FirebaseAuthentication.signInWithGoogle({ useCredentialManager: false })
         const idToken = res.credential?.idToken
         if (!idToken) throw new Error('no-id-token')
         await signInWithCredential(auth!, GoogleAuthProvider.credential(idToken))
         return true
       }
-      await signInWithPopup(auth!, new GoogleAuthProvider())
+      const provider = new GoogleAuthProvider()
+      provider.setCustomParameters({ prompt: 'select_account' })
+      await signInWithPopup(auth!, provider)
       return true
     } catch (e) {
       const code = (e as { code?: string }).code
@@ -112,6 +152,16 @@ export const useAuthStore = create<AuthState>()((set) => ({
       } else {
         set({ error: 'No se pudo iniciar con Google. Usa correo y contraseña o inténtalo de nuevo.' })
       }
+      return false
+    }
+  },
+  sendPasswordReset: async (email) => {
+    set({ error: null })
+    try {
+      await sendPasswordResetEmail(auth!, email)
+      return true
+    } catch {
+      set({ error: 'No se encontró una cuenta con ese correo.' })
       return false
     }
   },

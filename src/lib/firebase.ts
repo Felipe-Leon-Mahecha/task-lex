@@ -19,6 +19,12 @@ const configured = Boolean(config.apiKey && config.projectId)
 export const firebaseApp: FirebaseApp | null = configured ? initializeApp(config) : null
 export const db: Firestore | null = configured ? getFirestore(firebaseApp!) : null
 export const auth: Auth | null = configured ? getAuth(firebaseApp!) : null
-export const analytics: Analytics | null =
-  configured && typeof window !== 'undefined' ? getAnalytics(firebaseApp!) : null
+export const analytics: Analytics | null = (() => {
+  if (!configured || typeof window === 'undefined') return null
+  try {
+    return getAnalytics(firebaseApp!)
+  } catch {
+    return null
+  }
+})()
 export const storage: FirebaseStorage | null = configured ? getStorage(firebaseApp!) : null

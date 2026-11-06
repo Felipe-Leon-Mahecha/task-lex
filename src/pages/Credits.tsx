@@ -16,11 +16,12 @@ import {
   Waves,
   Globe,
   Info,
+  Download,
 } from 'lucide-react'
 import { APP_NAME, APP_VERSION } from '../lib/appInfo'
 import { useUIStore } from '../store/ui'
 
-const WA = 'https://wa.me/573104885609?text=¡Hola%20Felipe!%20Vi%20Flux%20y%20me%20interesa%20una%20p%C3%A1gina%20web.'
+const WA = 'https://wa.me/573104885609?text=¡Hola%20Felipe!%20Vi%20Quacker%20y%20me%20interesa%20una%20p%C3%A1gina%20web.'
 const IG = 'https://www.instagram.com/felipeleonmm'
 const WEB = 'https://felipe-leon-web-studio.vercel.app/'
 
@@ -80,8 +81,8 @@ export default function Credits() {
             muestran el ritmo real de tu semana.
           </p>
           <p className="mt-3 text-sm text-[var(--text-muted)]">
-            Se llama {APP_NAME} porque tu día debería fluir: cada tarea pasa de pendiente a hecha como un hilo que
-            se suelta, y la app te acompaña para que no se te escape nada.
+            Se llama {APP_NAME} porque cada tarea completada merece su quack: una pequeña celebración que hace
+            que el día avance sin fricción y sin que se te escape nada.
           </p>
           <ul className="mt-5 space-y-2">
             {appFeatures.map(({ Icon, text }) => (
@@ -102,6 +103,9 @@ export default function Credits() {
             <button onClick={openUpdateModal} className={outlineBtn}>
               <Info className="h-4 w-4" /> Sobre la actualización
             </button>
+            <Link to="/actualizaciones" className={outlineBtn}>
+              <Download className="h-4 w-4" /> Descargar Quacker
+            </Link>
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
+import { useMemo, useState } from 'react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { BarChart3 } from 'lucide-react'
 import { useTasksStore } from '../store/tasks'
 import { useSectionsStore } from '../store/sections'
@@ -9,17 +9,7 @@ const COLORS = ['#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444'
 export default function Stats() {
   const tasks = useTasksStore((s) => s.tasks)
   const sections = useSectionsStore((s) => s.sections)
-
- const hourlyData = useMemo(() => {
-    const hours = Array(24).fill(0).map((_, i) => ({ hour: i, count: 0 }))
-    tasks.forEach((t) => {
-      if (t.completedAt) {
-        const hour = new Date(t.completedAt).getHours()
-        hours[hour].count++
-      }
-    })
-    return hours
-  }, [tasks])
+  const [period, setPeriod] = useState<'week' | 'month'>('week')
 
   const sectionData = useMemo(() => {
     const sectionCounts = new Map<string, number>()
@@ -34,28 +24,55 @@ export default function Stats() {
     }))
   }, [tasks, sections])
 
-  const streakData = useMemo(() => {
-    const data = []
+  const activityData = useMemo(() => {
+    const data: { date: string; tasks: number }[] = []
     const today = new Date()
-    for (let i = 29; i >= 0; i--) {
+    const days = period === 'week' ? 7 : 30
+    for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today)
       date.setDate(date.getDate() - i)
-      const dateStr = date.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })
-      
+      const dateStr = period === 'week'
+        ? date.toLocaleDateString('es-CO', { weekday: 'short' }).replace('.', '')
+        : date.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit' })
       const completed = tasks.filter((t) => {
         if (!t.completedAt) return false
         const completedDate = new Date(t.completedAt)
         return completedDate.toDateString() === date.toDateString()
       }).length
-      
       data.push({ date: dateStr, tasks: completed })
     }
     return data
-  }, [tasks])
+  }, [tasks, period])
 
   const totalCompleted = tasks.filter((t) => t.status === 'done').length
-  const totalPending = tasks.filter((t) => t.status === 'pending').length
-  const avgPerDay = (totalCompleted / 30).toFixed(1)
+  const totalPending = tasks.filter((t) => t.status !== 'done' && !t.archived).length
+  const activeDays = activityData.filter((day) => day.tasks > 0).length
+  const periodDays = period === 'week' ? 7 : 30
+  const insight = useMemo(() => {
+    const today = new Date()
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const windowSize = period === 'week' ? 7 : 30
+    const currentStart = new Date(todayStart)
+    currentStart.setDate(currentStart.getDate() - windowSize + 1)
+    const previousStart = new Date(currentStart)
+    previousStart.setDate(previousStart.getDate() - windowSize)
+    const current = tasks.filter((task) => task.completedAt && task.completedAt >= currentStart && task.completedAt < new Date(todayStart.getTime() + 86400000)).length
+    const previous = tasks.filter((task) => task.completedAt && task.completedAt >= previousStart && task.completedAt < currentStart).length
+    const busiest = activityData.reduce<{ date: string; tasks: number } | null>((best, day) => !best || day.tasks > best.tasks ? day : best, null)
+    let message = 'Completa algunas tareas y volveremos con una lectura de tu progreso.'
+    if (current > 0) {
+      const difference = current - previous
+      const comparison = previous === 0
+        ? 'Este es tu primer periodo con actividad registrada.'
+        : difference > 0
+          ? `Son ${difference} más que en el periodo anterior.`
+          : difference < 0
+            ? `Van ${Math.abs(difference)} menos que en el periodo anterior.`
+            : 'Mantienes el mismo ritmo que en el periodo anterior.'
+      message = `Llevas ${current} tarea${current === 1 ? '' : 's'} completada${current === 1 ? '' : 's'} en estos ${windowSize} días. ${comparison}${busiest?.tasks ? ` Tu día con más actividad fue ${busiest.date}, con ${busiest.tasks}.` : ''}`
+    }
+    return { current, previous, message, average: Math.round((current / windowSize) * 10) / 10 }
+  }, [activityData, period, tasks])
 
   return (
     <div className="max-w-4xl">
@@ -71,7 +88,7 @@ export default function Stats() {
         </div>
       )}
 
-      <div className="mb-6 grid grid-cols-3 gap-4">
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="card p-4">
           <p className="text-xs text-[var(--text-muted)]">Completadas</p>
           <p className="text-2xl font-bold">{totalCompleted}</p>
@@ -81,17 +98,30 @@ export default function Stats() {
           <p className="text-2xl font-bold">{totalPending}</p>
         </div>
         <div className="card p-4">
-          <p className="text-xs text-[var(--text-muted)]">Promedio/día (30d)</p>
-          <p className="text-2xl font-bold">{avgPerDay}</p>
+          <p className="text-xs text-[var(--text-muted)]">Días con actividad · {period === 'week' ? '7 días' : '30 días'}</p>
+          <p className="text-2xl font-bold">{activeDays}<span className="ml-1 text-sm font-medium text-[var(--text-muted)]">/ {periodDays}</span></p>
         </div>
       </div>
 
+      {tasks.length > 0 && <section className="mb-6 overflow-hidden rounded-2xl border border-[var(--accent)]/25 bg-gradient-to-br from-[var(--surface)] to-[var(--accent)]/[0.08] p-5" aria-live="polite">
+        <div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--accent)]/12 text-[var(--accent)]"><BarChart3 className="h-5 w-5" /></span><div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--accent)]">Lo que cuentan tus datos</p><p className="mt-1 text-sm leading-relaxed text-[var(--text)]">{insight.message}</p><p className="mt-2 text-xs text-[var(--text-muted)]">Promedio: {insight.average} tareas al día · Comparación: {insight.current} frente a {insight.previous}</p></div></div>
+      </section>}
+
       <div className="mb-6 card p-5">
-        <h3 className="mb-4 text-sm font-semibold">Productividad por hora</h3>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold">Días en que estuviste activo</h3>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">Elige el periodo que te resulte más útil.</p>
+          </div>
+          <div className="flex gap-2 rounded-xl bg-[var(--surface-2)] p-1">
+            <button onClick={() => setPeriod('week')} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${period === 'week' ? 'bg-[var(--accent)] text-[var(--bg)]' : 'text-[var(--text-muted)]'}`}>Semana</button>
+            <button onClick={() => setPeriod('month')} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${period === 'month' ? 'bg-[var(--accent)] text-[var(--bg)]' : 'text-[var(--text-muted)]'}`}>Mes</button>
+          </div>
+        </div>
         <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={hourlyData}>
+          <BarChart data={activityData}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis dataKey="hour" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
+            <XAxis dataKey="date" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} interval={period === 'month' ? 4 : 0} />
             <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
             <Tooltip 
               contentStyle={{ 
@@ -101,9 +131,10 @@ export default function Stats() {
                 color: 'var(--text)'
               }} 
             />
-            <Bar dataKey="count" fill="var(--accent)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="tasks" name="Tareas completadas" fill="var(--accent)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
+        <p className="mt-2 text-center text-xs text-[var(--text-muted)]">Tu actividad se muestra como referencia; los días sin tareas no reducen tu progreso.</p>
       </div>
 
       <div className="mb-6 card p-5">
@@ -147,25 +178,6 @@ export default function Stats() {
         </div>
       </div>
 
-      <div className="card p-5">
-        <h3 className="mb-4 text-sm font-semibold">Racha (últimos 30 días)</h3>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={streakData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis dataKey="date" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
-            <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'var(--surface)', 
-                border: '1px solid var(--border)',
-                borderRadius: '8px',
-                color: 'var(--text)'
-              }} 
-            />
-            <Line type="monotone" dataKey="tasks" stroke="var(--accent)" strokeWidth={2} dot={{ r: 3 }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
     </div>
   )
 }

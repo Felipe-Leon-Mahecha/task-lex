@@ -1,0 +1,36 @@
+{
+  "name": "quacker-windows",
+  "version": "5.2.12",
+  "private": true,
+  "author": "Quacker",
+  "description": "Aplicación de escritorio de Quacker para Windows",
+  "main": "main.cjs",
+  "scripts": {
+    "dev": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^45.2.1",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.tasklex.quacker.desktop",
+    "productName": "Quacker",
+    "directories": { "output": "../desktop-release-v2" },
+    "files": ["main.cjs", "preload.cjs", "assets/**/*", "package.json"],
+    "win": {
+      "icon": "assets/quacker.ico",
+      "protocols": [{ "name": "Quacker Google sign-in", "schemes": ["quacker"] }],
+      "target": ["nsis"],
+      "artifactName": "Quacker-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Quacker"
+    }
+  }
+}

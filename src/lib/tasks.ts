@@ -1,4 +1,4 @@
-import type { Priority, Recurrence, SectionId, Status, Task } from '../types/task'
+import type { Priority, Recurrence, ReminderKind, SectionId, Status, Task } from '../types/task'
 import { useSettingsStore } from '../store/settings'
 import { migrateSectionId } from './sections'
 
@@ -10,8 +10,10 @@ export type TaskInput = {
   status: Status
   recurrence: Recurrence
   focusDay: boolean
+  completeWithSubtasks?: boolean
   reminderLead: number | null
   reminder2HoursBefore: boolean
+  reminderKind?: ReminderKind
   subtasks: { id: string; text: string; done: boolean }[]
   notesLinks: { id: string; type: 'nota' | 'link'; content: string; label?: string }[]
   images: string[]
@@ -49,8 +51,10 @@ export function toTaskInput(t: Task): TaskInput {
     status: t.status,
     recurrence: t.recurrence,
     focusDay: t.focusDay,
+    completeWithSubtasks: t.completeWithSubtasks,
     reminderLead: t.reminderLead,
     reminder2HoursBefore: t.reminder2HoursBefore,
+    reminderKind: t.reminderKind,
     subtasks: t.subtasks,
     notesLinks: t.notesLinks,
     images: t.images,
@@ -69,13 +73,21 @@ export function toInputValue(d: Date) {
 }
 
 export function reviveTask(t: Task): Task {
+  const parse = (value: Date | string | null | undefined): Date | null => {
+    if (!value) return null
+    const result = value instanceof Date ? value : new Date(value)
+    return Number.isNaN(result.getTime()) ? null : result
+  }
+  const createdAt = parse(t.createdAt) ?? new Date()
+  const updatedAt = parse(t.updatedAt) ?? createdAt
   return {
     ...t,
     sectionId: migrateSectionId(t.sectionId),
     images: Array.isArray(t.images) ? t.images : [],
-    dueDate: t.dueDate ? new Date(t.dueDate) : null,
-    createdAt: new Date(t.createdAt),
-    updatedAt: new Date(t.updatedAt),
-    completedAt: t.completedAt ? new Date(t.completedAt) : null,
+    dueDate: parse(t.dueDate),
+    createdAt,
+    updatedAt,
+    completedAt: parse(t.completedAt),
+    pomodoro: { ...t.pomodoro, endsAt: parse(t.pomodoro?.endsAt) },
   }
 }

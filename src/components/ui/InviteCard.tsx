@@ -3,6 +3,8 @@ import { Copy, Gift, Share2, Check } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { Share } from '@capacitor/share'
 import { useAuthStore } from '../../store/auth'
+import { auth } from '../../lib/firebase'
+import { apiUrl } from '../../lib/apiUrl'
 
 const REASONS: Record<string, string> = {
   ya_canjeado: 'Ya canjeaste un código de invitación antes',
@@ -21,12 +23,12 @@ export default function InviteCard() {
 
   useEffect(() => {
     if (!user) return
-    const host = Capacitor.getPlatform() === 'android' ? 'task-lex.vercel.app' : window.location.host
-    fetch(`${window.location.protocol}//${host}/api/referral`, {
+    const token = auth?.currentUser?.getIdToken()
+    Promise.resolve(token).then((idToken) => fetch(apiUrl('/api/referral'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}) },
       body: JSON.stringify({ action: 'code', uid: user.uid }),
-    })
+    }))
       .then((r) => r.json())
       .then((d) => setMyCode(d.code || ''))
       .catch(() => {})
@@ -37,10 +39,10 @@ export default function InviteCard() {
     setBusy(true)
     setMsg(null)
     try {
-      const host = Capacitor.getPlatform() === 'android' ? 'task-lex.vercel.app' : window.location.host
-      const res = await fetch(`${window.location.protocol}//${host}/api/referral`, {
+      const idToken = auth?.currentUser ? await auth.currentUser.getIdToken() : null
+      const res = await fetch(apiUrl('/api/referral'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}) },
         body: JSON.stringify({ action: 'redeem', uid: user.uid, code: input }),
       })
       const d = await res.json()
@@ -61,10 +63,10 @@ export default function InviteCard() {
   }
 
   const handleShare = async () => {
-    const text = `Únete a Flux con mi código ${myCode} y gana monedas gratis: https://task-lex.vercel.app`
+    const text = `Únete a Quacker con mi código ${myCode} y gana monedas gratis: https://task-lex.vercel.app`
     try {
       if (Capacitor.isNativePlatform()) {
-        await Share.share({ title: 'Flux — Invita y gana', text, dialogTitle: 'Compartir código' })
+        await Share.share({ title: 'Quacker — Invita y gana', text, dialogTitle: 'Compartir código' })
       } else {
         await navigator.clipboard.writeText(text)
         setCopied(true)
@@ -74,13 +76,13 @@ export default function InviteCard() {
   }
 
   return (
-    <div className="card mb-4 max-w-lg p-5">
+    <div className="card w-full p-5">
       <p className="flex items-center gap-2 text-sm font-semibold">
         <Gift className="h-4 w-4 text-[var(--accent)]" /> Invita y gana
       </p>
       <p className="mt-1 text-sm text-[var(--text-muted)]">
-        Comparte tu código: tu amigo gana <span className="font-bold text-[var(--accent)]">100 monedas</span> y tú ganas{' '}
-        <span className="font-bold text-[var(--accent)]">200</span> cuando lo canjee.
+        Comparte tu código: tu amigo recibe <span className="font-bold text-[var(--accent)]">500 monedas</span> y tú recibes{' '}
+        <span className="font-bold text-[var(--accent)]">500</span> cuando lo canjee.
       </p>
 
       {myCode ? (

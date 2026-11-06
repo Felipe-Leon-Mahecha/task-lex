@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="com.android.vending.BILLING" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -28,8 +31,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="flux" android:host="create" />
+                <data android:scheme="flux" android:host="note" />
+                <data android:scheme="flux" android:host="focus" />
                 <data android:scheme="flux" android:host="dashboard" />
                 <data android:scheme="flux" android:host="open" />
+                <data android:scheme="flux" android:host="task" />
             </intent-filter>
 
             <!-- Static shortcuts -->
@@ -38,6 +44,18 @@
                 android:resource="@xml/shortcuts" />
 
         </activity>
+
+        <receiver
+            android:name=".QuackerWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quacker_info" />
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -56,4 +74,5 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 </manifest>

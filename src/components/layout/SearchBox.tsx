@@ -1,13 +1,16 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, X, Filter, SearchX } from 'lucide-react'
+import { Search, X, Filter, SearchX, FileText } from 'lucide-react'
 import { useTasksStore } from '../../store/tasks'
 import { useSectionsStore } from '../../store/sections'
+import { useNotesStore } from '../../store/notes'
 import type { Priority } from '../../types/task'
 
 export default function SearchBox() {
   const tasks = useTasksStore((s) => s.tasks)
   const sections = useSectionsStore((s) => s.sections)
+  const notes = useNotesStore((s) => s.notes)
+  const folders = useNotesStore((s) => s.folders)
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
@@ -58,10 +61,22 @@ export default function SearchBox() {
       .slice(0, 8)
   }, [query, tasks, priorityFilter, tagFilter, hasDueDate])
 
+  const noteResults = useMemo(() => {
+    const q = query.trim().toLocaleLowerCase('es')
+    if (!q) return []
+    return notes.filter((note) => `${note.title} ${note.blocks.map((block) => block.html.replace(/<[^>]*>/g, ' ')).join(' ')}`.toLocaleLowerCase('es').includes(q)).slice(0, 5)
+  }, [notes, query])
+
   const select = (sectionId: string) => {
     setQuery('')
     setFocused(false)
-    navigate(`/s/${sectionId}`)
+    navigate(sectionId === 'inbox' ? '/bandeja' : `/s/${sectionId}`)
+  }
+
+  const selectNote = (id: string) => {
+    setQuery('')
+    setFocused(false)
+    navigate(`/notas/${id}`)
   }
 
   const clearFilters = () => {
@@ -164,13 +179,15 @@ export default function SearchBox() {
 
       {focused && (query.trim() || hasActiveFilters) && !showFilters && (
         <div className="absolute right-0 top-full z-50 mt-2 w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-lg">
-          {results.length === 0 ? (
+          {results.length === 0 && noteResults.length === 0 ? (
             <p className="flex items-center gap-2 px-4 py-3 text-sm text-[var(--text-muted)]">
               <SearchX className="h-4 w-4 shrink-0" />
               Sin resultados
             </p>
           ) : (
-            results.map((t) => (
+            <>
+            {noteResults.length > 0 && <div className="border-b border-[var(--border)] p-2"><p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Notas</p>{noteResults.map((note) => <button key={note.id} onMouseDown={(event) => { event.preventDefault(); selectNote(note.id) }} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-[var(--surface-2)]"><FileText className="h-4 w-4 shrink-0 text-[var(--accent)]" /><span className="min-w-0 flex-1 truncate">{note.title || 'Nota sin título'}</span><span className="shrink-0 text-[10px] text-[var(--text-muted)]">{folders.find((folder) => folder.id === note.folderId)?.name ?? 'Sin carpeta'}</span></button>)}</div>}
+            {results.length > 0 && <div className="p-2"><p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Tareas</p>{results.map((t) => (
               <button
                 key={t.id}
                 onMouseDown={(e) => {
@@ -198,7 +215,8 @@ export default function SearchBox() {
                   {labelOf(t.sectionId)}
                 </span>
               </button>
-            ))
+            ))}</div>}
+            </>
           )}
         </div>
       )}

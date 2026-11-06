@@ -1,20 +1,19 @@
 import { useState } from 'react'
-import { LogOut, Menu, Clock, Wifi, WifiOff, RefreshCw } from 'lucide-react'
+import { Menu, Wifi, WifiOff, RefreshCw, User } from 'lucide-react'
 import { useAuthStore } from '../../store/auth'
 import { useUIStore } from '../../store/ui'
 import { useOfflineStore } from '../../store/offline'
 import SearchBox from './SearchBox'
-import Modal from '../ui/Modal'
+import AccountModal from '../ui/AccountModal'
+import { playAppSound } from '../../lib/soundEffects'
 
 export default function Header() {
   const user = useAuthStore((s) => s.user)
   const demo = useAuthStore((s) => s.demo)
-  const signOut = useAuthStore((s) => s.signOut)
   const openSidebar = useUIStore((s) => s.openSidebar)
-  const openFocus = useUIStore((s) => s.openFocus)
   const isOnline = useOfflineStore((s) => s.isOnline)
   const pendingOperations = useOfflineStore((s) => s.pendingOperations)
-  const [logoutOpen, setLogoutOpen] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
 
   const status = demo ? 'Modo local' : isOnline ? 'Sincronizado' : 'Offline'
   const hasPending = pendingOperations.length > 0
@@ -23,7 +22,7 @@ export default function Header() {
     <>
       <header className="flex items-center gap-3 border-b border-[var(--border)] px-3 pb-3 pt-7 sm:gap-4 sm:px-8">
         <button
-          onClick={openSidebar}
+          onClick={() => { playAppSound('sidebar-open', 0.18); openSidebar() }}
           title="Abrir menú"
           data-tut="menu"
           className="rounded-full p-2.5 text-[var(--text)] hover:bg-[var(--surface-2)] sm:hidden"
@@ -52,53 +51,17 @@ export default function Header() {
         </div>
         {user && (
           <button
-            onClick={() => setLogoutOpen(true)}
-            title="Cerrar sesión"
-            data-tut="logout"
-            className="rounded-full p-2 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-            aria-label="Cerrar sesión"
+            onClick={() => setAccountOpen(true)}
+            title="Mi cuenta"
+            data-tut="account"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+            aria-label="Mi cuenta"
           >
-            <LogOut className="h-4 w-4" />
+            <User className="h-5 w-5" />
           </button>
         )}
-        <button
-          onClick={openFocus}
-          title="Modo foco"
-          data-tut="focus"
-          className="rounded-full p-2 text-[var(--accent)] hover:bg-[var(--surface-2)]"
-          aria-label="Modo foco"
-        >
-          <Clock className="h-5 w-5" />
-        </button>
       </header>
-      <Modal
-        open={logoutOpen}
-        onClose={() => setLogoutOpen(false)}
-        title="Cerrar sesión"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-[var(--text-muted)]">
-            ¿Seguro que quieres cerrar sesión?
-          </p>
-          <div className="flex flex-col gap-2">
-            <button
-              onClick={() => {
-                signOut()
-                setLogoutOpen(false)
-              }}
-              className="btn-primary justify-center"
-            >
-              Cerrar sesión
-            </button>
-            <button
-              onClick={() => setLogoutOpen(false)}
-              className="rounded-full border border-[var(--border)] py-2 text-sm text-[var(--text)] hover:bg-[var(--surface-2)]"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      </Modal>
+      <AccountModal open={accountOpen} onClose={() => setAccountOpen(false)} />
     </>
   )
 }

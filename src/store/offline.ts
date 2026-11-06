@@ -15,6 +15,7 @@ interface OfflineState {
 
 export interface PendingOperation {
   id: string
+  uid?: string
   type: 'task' | 'section' | 'settings'
   action: 'create' | 'update' | 'delete'
   data: any
@@ -50,10 +51,10 @@ export const useOfflineStore = create<OfflineState>()(
 // Initialize network listener
 export async function initNetworkListener() {
   const status = await Network.getStatus()
-  useOfflineStore.setState({ isOnline: status.connected })
+  useOfflineStore.getState().setOnline(status.connected)
 
   Network.addListener('networkStatusChange', (status) => {
-    useOfflineStore.setState({ isOnline: status.connected })
+    useOfflineStore.getState().setOnline(status.connected)
   })
 }
 
@@ -62,28 +63,33 @@ export function generateOperationId() {
 }
 
 // Sync pending operations when connection is restored
+let syncInProgress = false
+
 async function syncPendingOperations() {
+  if (syncInProgress) return
   const operations = [...useOfflineStore.getState().pendingOperations]
   const uid = getUid()
   
   if (!uid) return
-  
-  for (const operation of operations) {
-    try {
-      if (operation.type === 'task') {
-        if (operation.action === 'create') {
-          await setTask(uid, operation.data)
-        } else if (operation.action === 'update') {
-          await setTask(uid, operation.data)
-        } else if (operation.action === 'delete') {
-          await removeTask(uid, operation.data.id)
+
+  syncInProgress = true
+  try {
+    for (const operation of operations) {
+      if (operation.uid !== uid) continue
+      try {
+        if (operation.type === 'task') {
+          if (operation.action === 'create' || operation.action === 'update') {
+            await setTask(uid, operation.data)
+          } else if (operation.action === 'delete') {
+            await removeTask(uid, operation.data.id)
+          }
         }
+        useOfflineStore.getState().removePendingOperation(operation.id)
+      } catch (error) {
+        console.error('Error syncing operation:', operation.id, error)
       }
-      // Remove operation after successful sync
-      useOfflineStore.getState().removePendingOperation(operation.id)
-    } catch (error) {
-      console.error('Error syncing operation:', operation, error)
-      // Keep operation in queue for retry
     }
+  } finally {
+    syncInProgress = false
   }
 }

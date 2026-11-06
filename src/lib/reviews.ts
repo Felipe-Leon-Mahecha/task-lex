@@ -1,6 +1,5 @@
-import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore'
-import { db } from './firebase'
-import { APP_VERSION } from './appInfo'
+import { auth } from './firebase'
+import { apiUrl } from './apiUrl'
 
 export interface Review {
   uid: string
@@ -14,76 +13,52 @@ export interface Review {
   version: string
 }
 
-export const reviewsCol = () => collection(db!, 'reviews')
+type Action = 'approved' | 'mine' | 'submit' | 'all' | 'status' | 'delete'
 
-function reviewDoc(uid: string) {
-  return doc(reviewsCol(), uid)
-}
-
-function parse(data: Record<string, unknown>): Review {
-  return {
-    uid: String(data.uid ?? ''),
-    name: String(data.name ?? 'Anónimo'),
-    rating: Number(data.rating ?? 5),
-    comment: String(data.comment ?? ''),
-    public: Boolean(data.public ?? true),
-    status: (data.status as Review['status']) ?? 'pending',
-    createdAt: String(data.createdAt ?? new Date().toISOString()),
-    updatedAt: String(data.updatedAt ?? new Date().toISOString()),
-    version: String(data.version ?? ''),
+async function request(action: Action, data: Record<string, unknown> = {}, freshIdToken?: string) {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (action !== 'approved') {
+    const token = freshIdToken ?? (auth?.currentUser ? await auth.currentUser.getIdToken() : null)
+    if (!token) throw new Error('Inicia sesión para continuar.')
+    headers.Authorization = `Bearer ${token}`
   }
+  const response = await fetch(apiUrl('/api/reviews'), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ action, ...data }),
+  })
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(String(payload.error ?? 'No se pudo completar la operación.'))
+  return payload
 }
 
-export async function getMyReview(uid: string): Promise<Review | null> {
-  if (!db) return null
-  const snap = await getDoc(reviewDoc(uid))
-  return snap.exists() ? parse(snap.data() as Record<string, unknown>) : null
+export async function getMyReview(_uid: string): Promise<Review | null> {
+  const payload = await request('mine')
+  return payload.review ?? null
 }
 
 export async function submitReview(
-  uid: string,
+  _uid: string,
   data: { name: string; rating: number; comment: string; public: boolean },
+  freshIdToken?: string,
 ) {
-  if (!db) return
-  const existing = await getMyReview(uid)
-  const now = new Date().toISOString()
-  await setDoc(
-    reviewDoc(uid),
-    {
-      uid,
-      name: data.name.trim() || 'Anónimo',
-      rating: data.rating,
-      comment: data.comment.trim(),
-      public: data.public,
-      status: 'pending',
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-      version: APP_VERSION,
-    },
-    { merge: true },
-  )
+  await request('submit', data, freshIdToken)
 }
 
 export async function getApprovedReviews(): Promise<Review[]> {
-  if (!db) return []
-  const snap = await getDocs(query(reviewsCol(), where('status', '==', 'approved')))
-  return snap.docs.map((d) => parse(d.data() as Record<string, unknown>))
+  const payload = await request('approved')
+  return Array.isArray(payload.reviews) ? payload.reviews : []
 }
 
 export async function getAllReviews(): Promise<Review[]> {
-  if (!db) return []
-  const snap = await getDocs(reviewsCol())
-  return snap.docs
-    .map((d) => parse(d.data() as Record<string, unknown>))
-    .sort((a, b) => (a.updatedAt > b.updatedAt ? -1 : 1))
+  const payload = await request('all')
+  return Array.isArray(payload.reviews) ? payload.reviews : []
 }
 
 export async function setReviewStatus(uid: string, status: Review['status']) {
-  if (!db) return
-  await setDoc(reviewDoc(uid), { status }, { merge: true })
+  await request('status', { uid, status })
 }
 
 export async function deleteReview(uid: string) {
-  if (!db) return
-  await deleteDoc(reviewDoc(uid))
+  await request('delete', { uid })
 }

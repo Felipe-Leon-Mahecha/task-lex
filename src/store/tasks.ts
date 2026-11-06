@@ -14,6 +14,24 @@ import { ImpactStyle } from '@capacitor/haptics'
 import { useUndoStore } from './undo'
 import type { Task } from '../types/task'
 
+function isTemporaryCloudError(error: unknown): boolean {
+  const code = (error as { code?: string } | null)?.code ?? ''
+  return ['unavailable', 'deadline-exceeded', 'network-request-failed', 'cancelled'].includes(code)
+}
+
+function queueFailedTaskWrite(uid: string, action: PendingOperation['action'], data: unknown, error: unknown) {
+  if (!isTemporaryCloudError(error)) return
+  useOfflineStore.getState().addPendingOperation({
+    id: generateOperationId(),
+    uid,
+    type: 'task',
+    action,
+    data,
+    timestamp: Date.now(),
+  })
+  useOfflineStore.getState().setOnline(false)
+}
+
 interface TasksState {
   tasks: Task[]
   addTask: (task: Task) => void
@@ -34,11 +52,12 @@ export const useTasksStore = create<TasksState>()(
         
         if (uid) {
           if (isOnline) {
-            setTask(uid, task).catch(() => {})
+            setTask(uid, task).catch((error) => queueFailedTaskWrite(uid, 'create', task, error))
           } else {
             // Queue operation for offline
             const operation: PendingOperation = {
               id: generateOperationId(),
+              uid,
               type: 'task',
               action: 'create',
               data: task,
@@ -107,11 +126,12 @@ export const useTasksStore = create<TasksState>()(
           const uid = getUid()
           if (uid) {
             if (isOnline) {
-              setTask(uid, updated).catch(() => {})
+              setTask(uid, updated).catch((error) => queueFailedTaskWrite(uid, 'update', updated, error))
             } else {
               // Queue operation for offline
               const operation: PendingOperation = {
                 id: generateOperationId(),
+                uid,
                 type: 'task',
                 action: 'update',
                 data: updated,
@@ -123,13 +143,17 @@ export const useTasksStore = create<TasksState>()(
           
           // Sync to calendar if enabled
           const calendarSync = useSettingsStore.getState().calendarSync
-          if (calendarSync && updated.calendarEventId && isOnline) {
+          if (updated.calendarEventId && !updated.dueDate && isOnline) {
+            deleteCalendarEvent(updated.calendarEventId).then(() => {
+              get().updateTask(id, { calendarEventId: undefined })
+            }).catch(() => {})
+          } else if (calendarSync && updated.calendarEventId && isOnline && Object.keys(patch).some((key) => key !== 'calendarEventId')) {
             updateCalendarEvent(updated.calendarEventId, {
               title: updated.title,
               description: updated.description,
               dueDate: updated.dueDate,
             }).catch(() => {})
-          } else if (calendarSync && !updated.calendarEventId && updated.dueDate && isOnline) {
+          } else if (calendarSync && !updated.calendarEventId && updated.dueDate && isOnline && Object.keys(patch).some((key) => key !== 'calendarEventId')) {
             // Create calendar event if task now has due date
             createCalendarEvent({
               title: updated.title,
@@ -170,20 +194,20 @@ export const useTasksStore = create<TasksState>()(
           })
         }
         
-        // Delete from calendar if synced
-        const calendarSync = useSettingsStore.getState().calendarSync
-        if (calendarSync && target?.calendarEventId && isOnline) {
+        // Remove any event previously linked to this task.
+        if (target?.calendarEventId && isOnline) {
           deleteCalendarEvent(target.calendarEventId).catch(() => {})
         }
         
         const uid = getUid()
         if (uid) {
           if (isOnline) {
-            removeTask(uid, id).catch(() => {})
+            removeTask(uid, id).catch((error) => queueFailedTaskWrite(uid, 'delete', { id, task: target }, error))
           } else {
             // Queue operation for offline
             const operation: PendingOperation = {
               id: generateOperationId(),
+              uid,
               type: 'task',
               action: 'delete',
               data: { id, task: target },
@@ -203,10 +227,11 @@ export const useTasksStore = create<TasksState>()(
           const isOnline = useOfflineStore.getState().isOnline
           toDelete.forEach((t) => {
             if (isOnline) {
-              removeTask(uid, t.id).catch(() => {})
+              removeTask(uid, t.id).catch((error) => queueFailedTaskWrite(uid, 'delete', { id: t.id, task: t }, error))
             } else {
               useOfflineStore.getState().addPendingOperation({
                 id: generateOperationId(),
+                uid,
                 type: 'task',
                 action: 'delete',
                 data: { id: t.id, task: t },

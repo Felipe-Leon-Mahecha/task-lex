@@ -1,9 +1,85 @@
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY
-const GEMINI_MODEL = 'gemini-3.5-flash'
+import { createSign } from 'node:crypto'
 
-const BASE_PROMPT = `Eres Fox, un asistente de productividad de la app Flux.
+const FOX_OWNER_EMAIL = 'fmleonm19@gmail.com'
+const SA_PROJECT_ID = process.env.FIREBASE_PROJECT_ID
+const SA_CLIENT_EMAIL = process.env.FIREBASE_CLIENT_EMAIL
+const SA_PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+const WEB_API_KEY = process.env.VITE_FIREBASE_API_KEY
+
+let saToken = null
+let saTokenExp = 0
+
+async function getAccessToken() {
+  if (saToken && saTokenExp > Date.now() + 60_000) return saToken
+  const iat = Math.floor(Date.now() / 1000)
+  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
+  const unsigned = `${b64({ alg: 'RS256', typ: 'JWT' })}.${b64({ iss: SA_CLIENT_EMAIL, scope: 'https://www.googleapis.com/auth/datastore', aud: 'https://oauth2.googleapis.com/token', iat, exp: iat + 3600 })}`
+  const sig = createSign('RSA-SHA256').update(unsigned).sign(SA_PRIVATE_KEY, 'base64url')
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${unsigned}.${sig}` }),
+  })
+  if (!res.ok) throw new Error(`oauth2 ${res.status}`)
+  const data = await res.json()
+  saToken = data.access_token
+  saTokenExp = Date.now() + (data.expires_in ?? 3600) * 1000
+  return saToken
+}
+
+async function lookupUser(idToken) {
+  const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${WEB_API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken }),
+  })
+  if (!res.ok) return null
+  const data = await res.json()
+  const u = data?.users?.[0]
+  if (!u) return null
+  // El owner debe tener el email verificado para evitar que alguien se registre
+  // con ese email y obtenga privilegios sin verificar.
+  if (u.email === FOX_OWNER_EMAIL && u.emailVerified !== true) return null
+  return u
+}
+
+async function isPremiumUser(uid) {
+  if (!uid) return false
+  try {
+    const token = await getAccessToken()
+    const url = `https://firestore.googleapis.com/v1/projects/${SA_PROJECT_ID}/databases/(default)/documents/users/${uid}/foxSkins/data`
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+    if (!res.ok) return false
+    const doc = await res.json()
+    const f = doc.fields ?? {}
+    if (f.premium?.booleanValue !== true) return false
+    const until = Number(f.premiumUntil?.integerValue ?? f.premiumUntil?.stringValue ?? f.premiumUntil?.doubleValue ?? 0)
+    return until === 0 || until > Date.now()
+  } catch {
+    return false
+  }
+}
+
+async function canUseAI(req) {
+  const header = req.headers.authorization ?? ''
+  if (!header.startsWith('Bearer ')) return false
+  try {
+    const user = await lookupUser(header.slice(7))
+    if (!user) return false
+    if (user.email === FOX_OWNER_EMAIL && user.emailVerified === true) return true
+    return await isPremiumUser(user.localId)
+  } catch {
+    return false
+  }
+}
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash'
+const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.5-flash-lite'
+
+const BASE_PROMPT = `Eres el asistente de productividad de la app Quacker.
 El usuario habla español (Colombia). Responde SIEMPRE en español, tono cercano, motivador y breve.
-Fox tiene humor ligero y personalidad de zorro astuto, pero sin exagerar emojis (máximo 1 por respuesta).
+Adapta tu nombre y personalidad a la mascota equipada: pato (Quackington) o zorro (Fox). No hables como zorro si la mascota equipada es el pato.
 NUNCA inventes tareas que no estén en los datos proporcionados.`
 
 const ACTION_PROMPTS = {
@@ -65,11 +141,19 @@ Estás en modo conversación libre con el usuario. Puedes:
 - Ayudar a pensar y organizar ideas
 - Motivar y celebrar logros
 - Recomendar por dónde empezar
+- Explicar y ayudar a planear la semana usando tareas, horarios y bloques de rutina
+- Orientar sobre calendario, estadísticas, notas, temporizador, temas, tienda, inventario y logros
+- Proponer subtareas, prioridades y una secuencia realista para objetivos
 
 REGLAS:
-- reply: máximo 80 palabras, conversacional, cálido, con personalidad de zorro astuto
+- reply: máximo 80 palabras, conversacional y cálido, con la personalidad de la mascota indicada
 - Si preguntan algo ambiguo sobre tareas, responde lo más útil según sus datos
-- NO crees ni modifiques tareas: para eso está el modo Crear tarea`,
+- Puedes proponer acciones concretas cuando la persona pida hacer algo. Devuelve hasta 3 acciones en "actions"; si solo pregunta, devuelve [].
+- Tipos permitidos: create_task, update_task, create_note, update_note, create_section, rename_section, create_week_block, update_week_block, equip_skin, set_active_pet, navigate.
+- Cada acción debe tener summary breve y los campos necesarios. Para actualizar usa únicamente IDs del contexto. No inventes IDs ni cambies campos no pedidos.
+- Para horarios, días usa 0=lunes ... 6=domingo; fecha YYYY-MM-DD o cadena vacía; horas HH:mm. Para tareas la prioridad es baja/media/alta y dueDate ISO o cadena vacía.
+- Nunca propongas borrar datos, comprar, gastar monedas, cambiar pagos, contraseñas, privacidad o seguridad. No sugieras equipar una skin que no figure desbloqueada.
+- Las acciones se mostrarán como borrador y el usuario decidirá si aplicarlas. Si falta información necesaria, pregunta y devuelve actions [].`,
 
   reschedule: `${BASE_PROMPT}
 
@@ -145,8 +229,37 @@ function buildSchema(action) {
         type: 'object',
         properties: {
           reply: { type: 'string' },
+          actions: {
+            type: 'array',
+            maxItems: 3,
+            items: {
+              type: 'object',
+              properties: {
+                type: { type: 'string', enum: ['create_task', 'update_task', 'create_note', 'update_note', 'create_section', 'rename_section', 'create_week_block', 'update_week_block', 'equip_skin', 'set_active_pet', 'navigate'] },
+                summary: { type: 'string' },
+                targetId: { type: 'string' },
+                title: { type: 'string' },
+                description: { type: 'string' },
+                content: { type: 'string' },
+                sectionId: { type: 'string' },
+                folderId: { type: 'string' },
+                priority: { type: 'string', enum: ['baja', 'media', 'alta'] },
+                dueDate: { type: 'string' },
+                start: { type: 'string' },
+                end: { type: 'string' },
+                days: { type: 'array', items: { type: 'integer', minimum: 0, maximum: 6 } },
+                date: { type: 'string' },
+                details: { type: 'string' },
+                pet: { type: 'string', enum: ['fox', 'quackington'] },
+                skinId: { type: 'string' },
+                route: { type: 'string' },
+                icon: { type: 'string' },
+              },
+              required: ['type', 'summary', 'targetId', 'title', 'description', 'content', 'sectionId', 'folderId', 'priority', 'dueDate', 'start', 'end', 'days', 'date', 'details', 'pet', 'skinId', 'route', 'icon'],
+            },
+          },
         },
-        required: ['reply'],
+        required: ['reply', 'actions'],
       }
     case 'reschedule':
       return {
@@ -189,14 +302,16 @@ function buildSchema(action) {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
+  if (!(await canUseAI(req))) return res.status(402).json({ error: 'Requiere Quacker Premium' })
+
   if (!GEMINI_API_KEY) return res.status(500).json({ error: 'AI service not configured' })
 
-  const { action, prompt, tasks, stats, title, description, mood, messages, overdueTasks, now } = req.body ?? {}
+      const { action, prompt, tasks, stats, title, description, mood, messages, overdueTasks, now, pet = 'fox', petName, appContext } = req.body ?? {}
   if (!action || !ACTION_PROMPTS[action]) return res.status(400).json({ error: 'Invalid action' })
 
   let userContent = ''
@@ -260,13 +375,14 @@ Contexto de tiempo: es ${new Intl.DateTimeFormat('es-CO', { weekday: 'long', hou
       }
       case 'chat': {
         if (!Array.isArray(messages) || messages.length === 0) return res.status(400).json({ error: 'messages is required' })
-        systemPrompt = ACTION_PROMPTS.chat
+        if (messages.length > 50) return res.status(400).json({ error: 'too many messages' })
+        systemPrompt = `${ACTION_PROMPTS.chat}\n\nMascota equipada: ${pet === 'quackington' ? `pato (${String(petName || 'Quackington')})` : 'zorro (Fox)'}. Preséntate y habla desde la personalidad de esa mascota.`
         const history = messages.slice(-12).map((m) => ({
           role: m.role === 'fox' ? 'model' : 'user',
           parts: [{ text: String(m.text ?? '') }],
         }))
         contents = [
-          { role: 'user', parts: [{ text: `Contexto actual del usuario: sus tareas pendientes (JSON): ${JSON.stringify(tasks ?? [])}. Estadísticas (JSON): ${JSON.stringify(stats ?? {})}. Usa esto solo si es relevante para la conversación.` }] },
+          { role: 'user', parts: [{ text: `Contexto actual de Quacker (JSON, puede tener listas de tareas, notas no privadas, secciones, horario semanal y skins desbloqueadas): ${JSON.stringify({ tasks: Array.isArray(tasks) ? tasks.slice(0, 60) : [], stats: stats ?? {}, appContext: appContext ?? {} }).slice(0, 24000)}. Usa solo IDs presentes aquí. Nunca repitas contenido privado.` }] },
           { role: 'model', parts: [{ text: 'Entendido, tengo el contexto. Adelante.' }] },
           ...history,
         ]
@@ -278,11 +394,12 @@ Contexto de tiempo: es ${new Intl.DateTimeFormat('es-CO', { weekday: 'long', hou
       contents = [{ role: 'user', parts: [{ text: userContent }] }]
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const generate = async (model) => {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
         contents,
         systemInstruction: { parts: [{ text: systemPrompt }] },
         generationConfig: {
@@ -290,8 +407,14 @@ Contexto de tiempo: es ${new Intl.DateTimeFormat('es-CO', { weekday: 'long', hou
           responseJsonSchema: buildSchema(action),
           temperature: action === 'chat' ? 0.6 : 0.3,
         },
-      }),
-    })
+        }),
+      })
+    }
+    let response = await generate(GEMINI_MODEL)
+    if ([429, 500, 502, 503, 504].includes(response.status) && GEMINI_FALLBACK_MODEL !== GEMINI_MODEL) {
+      await response.text().catch(() => '')
+      response = await generate(GEMINI_FALLBACK_MODEL)
+    }
 
     if (!response.ok) {
       const err = await response.text()

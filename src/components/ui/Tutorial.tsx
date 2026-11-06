@@ -1,80 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTutorialStore } from '../../store/tutorial'
 import { useSectionsStore } from '../../store/sections'
 
-interface Rect {
-  left: number
-  top: number
-  width: number
-  height: number
-}
+type Rect = { left: number; top: number; width: number; height: number }
+type Step = { path: string; selector: string; title: string; body: string }
 
-interface Step {
-  selector?: string
-  path?: string
-  title: string
-  body: string
-}
-
-function buildSteps(sections: { id: string; label: string }[]): Step[] {
-  const steps: Step[] = [
-    {
-      selector: '[data-tut="search"]',
-      title: 'Búsqueda rápida',
-      body: 'Encuentra cualquier tarea, nota o etiqueta en segundos, sin importar en qué apartado esté. Atajo de teclado: tecla /.',
-    },
-    {
-      selector: '[data-tut="focus"]',
-      title: 'Foco y sonidos',
-      body: 'Sesiones de concentración con descansos (Pomodoro). Toca el reloj para abrirlas y elige un sonido ambiente: lluvia, violín, lo-fi o ruido blanco.',
-    },
-    {
-      selector: '[data-tut="logout"]',
-      title: 'Tu sesión',
-      body: 'Aquí cierras sesión. Tus tareas se guardan y sincronizan en la nube automáticamente.',
-    },
-    {
-      path: '/',
-      title: 'El Dashboard',
-      body: 'Tu centro de control: meta diaria, racha de días productivos, tareas de hoy, próximos 7 días y estadísticas de la semana.',
-    },
+function buildSteps(sections: { id: string }[]): Step[] {
+  const firstSection = sections[0]
+  return [
+    { path: '/', selector: '[data-tut="dashboard-title"]', title: 'Tu día empieza aquí', body: 'Desde esta pantalla puedes ver lo que sigue, planear el día y revisar tu avance. El menú lateral te lleva al resto de Quacker.' },
+    { path: firstSection ? `/s/${firstSection.id}` : '/', selector: firstSection ? '[data-tut="quick-add"]' : '[data-tut="dashboard-title"]', title: 'Un espacio para cada cosa', body: 'Escribe una tarea aquí y pulsa Enter para agregarla rápido. Usa “Nueva tarea” si quieres añadir fecha, prioridad, subtareas o recordatorios.' },
+    { path: '/notas', selector: '[data-tut="notes-page"]', title: 'Tus ideas también tienen su lugar', body: 'Ordena notas por carpetas y vuelve a ellas cuando necesites información que acompaña tus tareas.' },
+    { path: '/tienda', selector: '[data-tut="shop-title"]', title: 'Personaliza y celebra tus avances', body: 'En la tienda encontrarás estilos, inventario, temas y logros. Completar tareas también te permite ganar recompensas.' },
   ]
-  sections.forEach((sec, i) => {
-    steps.push({
-      path: `/s/${sec.id}`,
-      title: `Apartado: ${sec.label}`,
-      body:
-        i === 0
-          ? `Cada tarea vive dentro de un apartado (una categoría). Este es "${sec.label}". Arriba tienes el botón "+ Nueva tarea", las pestañas de vista (Lista, Kanban, Calendario, Gantt) y filtros por prioridad y etiqueta.`
-          : `Este apartado se llama "${sec.label}" y funciona igual que el anterior: crea tareas con "+ Nueva tarea" y cámbiales la vista con las pestañas de arriba.`,
-    })
-  })
-  steps.push(
-    {
-      title: 'Cómo crear una tarea',
-      body: 'Toca "+ Nueva tarea" y escribe el título. Puedes elegir prioridad (baja, media, alta), fecha de vencimiento, subtareas, si se repite (diaria, semanal o mensual), un recordatorio y adjuntar fotos. Nota: máximo 2 fotos por tarea para cuidar el espacio de tu nube gratuita.',
-    },
-    {
-      title: 'Estados y acciones',
-      body: 'Pasa una tarea por Pendiente → En progreso → Hecha con el botón de círculo. Dentro de cada tarea puedes duplicarla, moverla a otro apartado o archivarla. Las que completas cuentan para tu meta diaria y tu racha.',
-    },
-    {
-      title: 'Vistas de cada apartado',
-      body: 'Lista: todas en fila. Kanban: columnas por estado. Calendario: organizadas por fecha. Gantt: línea de tiempo. Cambias con las pestañas y Flux recuerda tu preferencia para cada apartado.',
-    },
-    {
-      path: '/archivo',
-      title: 'Archivo',
-      body: 'Lo que archivas no se borra: va a parar aquí. Puedes restaurarlo a su apartado o eliminarlo definitivamente.',
-    },
-    {
-      path: '/creditos',
-      title: 'Sobre el creador',
-      body: 'Flux la hizo Felipe Leon. Toca finalizar para ver los créditos y sus redes.',
-    },
-  )
-  return steps
 }
 
 export default function Tutorial() {
@@ -84,79 +23,80 @@ export default function Tutorial() {
   const close = useTutorialStore((s) => s.close)
   const sections = useSectionsStore((s) => s.sections)
   const [rect, setRect] = useState<Rect | null>(null)
+  const [viewport, setViewport] = useState({ width: window.innerWidth, height: window.innerHeight })
   const navigate = useNavigate()
-
+  const location = useLocation()
   const steps = useMemo(() => buildSteps(sections), [sections])
-  const idx = Math.min(step, Math.max(0, steps.length - 1))
-  const current = steps[idx]
+  const index = Math.min(step, steps.length - 1)
+  const current = steps[index]
 
   useEffect(() => {
-    if (!open) return
-    if (current.path) {
-      setRect(null)
+    if (!open || !current) return
+    setRect(null)
+    if (location.pathname !== current.path) {
       navigate(current.path)
       return
     }
-    if (!current.selector) {
-      setRect(null)
-      return
-    }
-    setRect(null)
-    const el = document.querySelector<HTMLElement>(current.selector)
-    if (!el) return
-    el.scrollIntoView({ block: 'center', behavior: 'smooth' })
-    const t = setTimeout(() => {
-      const r = el.getBoundingClientRect()
-      if (r.width > 0 && r.height > 0) {
-        setRect({ left: r.left, top: r.top, width: r.width, height: r.height })
+    let frame = 0
+    let retry = 0
+    let cancelled = false
+    const findTarget = () => {
+      if (cancelled) return
+      const target = document.querySelector<HTMLElement>(current.selector)
+      if (!target) {
+        if (retry++ < 12) frame = window.requestAnimationFrame(findTarget)
+        return
       }
-    }, 400)
-    return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, step, current.selector, current.path])
+      target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      window.setTimeout(() => {
+        if (cancelled) return
+        const box = target.getBoundingClientRect()
+        if (box.width && box.height) setRect({ left: box.left, top: box.top, width: box.width, height: box.height })
+      }, 300)
+    }
+    frame = window.requestAnimationFrame(findTarget)
+    return () => { cancelled = true; if (frame) window.cancelAnimationFrame(frame) }
+  }, [open, step, current, location.pathname, navigate])
 
-  if (!open) return null
+  useEffect(() => {
+    if (!open) return
+    const update = () => {
+      setViewport({ width: window.innerWidth, height: window.innerHeight })
+      const target = current && document.querySelector<HTMLElement>(current.selector)
+      if (!target) return
+      const box = target.getBoundingClientRect()
+      if (box.width && box.height) setRect({ left: box.left, top: box.top, width: box.width, height: box.height })
+    }
+    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, true)
+    return () => { window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true) }
+  }, [open, current])
 
-  const handleNext = () => {
-    if (step + 1 >= steps.length) close()
-    else next()
-  }
+  if (!open || !current) return null
+  const finishStep = () => step + 1 >= steps.length ? close() : next()
+  const centerX = rect ? rect.left + rect.width / 2 : viewport.width / 2
+  const centerY = rect ? rect.top + rect.height / 2 : viewport.height / 2
+  const radius = rect ? Math.max(rect.width, rect.height) / 2 + 20 : 0
+  const panelWidth = Math.min(viewport.width * 0.92, 432)
+  const panelLeft = Math.max(12, Math.min(viewport.width - panelWidth - 12, centerX - panelWidth / 2))
+  const panelTop = rect
+    ? centerY < viewport.height / 2
+      ? Math.max(12, Math.min(viewport.height - 240, rect.top + rect.height + radius + 20))
+      : undefined
+    : undefined
+  const panelBottom = rect && panelTop === undefined ? Math.max(12, viewport.height - rect.top + radius + 20) : 16
 
-  return (
-    <div className="fixed inset-0 z-[70]">
-      {rect ? (
-        <div
-          style={{
-            position: 'fixed',
-            left: rect.left - 6,
-            top: rect.top - 6,
-            width: rect.width + 12,
-            height: rect.height + 12,
-            borderRadius: 16,
-            boxShadow: '0 0 0 2px var(--accent), 0 0 0 100vmax rgba(0,0,0,0.7)',
-          }}
-        />
-      ) : (
-        <div className="absolute inset-0 bg-black/70" />
-      )}
-      <div className="absolute inset-x-0 bottom-6 mx-auto w-[min(92%,26rem)] rounded-2xl border border-[var(--border)] bg-[var(--bg)] p-5 shadow-2xl">
-        <p className="eyebrow">
-          Tutorial · Paso {idx + 1} de {steps.length}
-        </p>
-        <h3 className="mt-1 text-lg font-bold tracking-tight">{current.title}</h3>
-        <p className="mt-1 text-sm text-[var(--text-muted)]">{current.body}</p>
-        <div className="mt-4 flex items-center justify-between gap-2">
-          <button
-            onClick={close}
-            className="rounded-full px-3 py-2 text-sm text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-          >
-            Omitir tutorial
-          </button>
-          <button onClick={handleNext} className="btn-primary">
-            {step + 1 >= steps.length ? 'Finalizar' : 'Siguiente'}
-          </button>
-        </div>
+  return <div className="fixed inset-0 z-[70]" aria-label="Recorrido guiado" role="dialog" aria-modal="true">
+    <div className="absolute inset-0 bg-black/78" style={rect ? { background: `radial-gradient(circle ${radius}px at ${centerX}px ${centerY}px, transparent 99%, rgba(0,0,0,.80) 100%)` } : undefined} />
+    {rect && <div aria-hidden className="pointer-events-none fixed rounded-full border-2 border-[var(--accent)] shadow-[0_0_0_4px_rgba(255,255,255,.2),0_0_30px_var(--accent)]" style={{ left: centerX - radius, top: centerY - radius, width: radius * 2, height: radius * 2 }} />}
+    <section className="fixed rounded-3xl border border-[var(--border)] bg-[var(--bg)] p-5 shadow-[0_24px_90px_rgba(0,0,0,.55)]" style={{ left: panelLeft, width: panelWidth, ...(panelTop !== undefined ? { top: panelTop } : { bottom: panelBottom }) }}>
+      <div className="mb-3 flex items-center justify-between gap-3"><p className="text-[10px] font-black uppercase tracking-[.18em] text-[var(--accent)]">Tu recorrido</p><span className="rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-[10px] font-bold text-[var(--text-muted)]">{String(index + 1).padStart(2, '0')} / {String(steps.length).padStart(2, '0')}</span></div>
+      <h2 className="text-lg font-extrabold tracking-tight text-[var(--text)]">{current.title}</h2>
+      <p className="mt-2 text-sm leading-relaxed text-[var(--text-muted)]">{current.body}</p>
+      <div className="mt-5 flex items-center justify-between gap-2 border-t border-[var(--border)] pt-4">
+        <button type="button" onClick={close} className="rounded-xl px-3 py-2.5 text-xs font-semibold text-[var(--text-muted)] transition hover:bg-[var(--surface-2)]">Salir</button>
+        <button type="button" onClick={finishStep} className="btn-primary min-h-11 rounded-xl px-5">{index + 1 >= steps.length ? 'Terminar recorrido' : 'Continuar'}</button>
       </div>
-    </div>
-  )
+    </section>
+  </div>
 }

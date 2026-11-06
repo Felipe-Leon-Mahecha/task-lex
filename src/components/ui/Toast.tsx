@@ -20,8 +20,16 @@ export default function Toast() {
         archive: 'Tarea archivada',
         delete: 'Tarea eliminada',
         move: 'Tarea movida',
+        'bulk-restore': 'Tareas restauradas',
+        'bulk-delete': 'Tareas eliminadas',
       }
-      setMessage(messages[lastAction.type])
+      const count = lastAction.previousTasks?.length ?? 1
+      const actionMessage = lastAction.type === 'bulk-restore'
+        ? `${count} tarea${count === 1 ? '' : 's'} restaurada${count === 1 ? '' : 's'}`
+        : lastAction.type === 'bulk-delete'
+          ? `${count} tarea${count === 1 ? '' : 's'} eliminada${count === 1 ? '' : 's'}`
+          : messages[lastAction.type]
+      setMessage(actionMessage)
       setVisible(true)
 
       const timer = setTimeout(() => {
@@ -36,8 +44,12 @@ export default function Toast() {
     const action = undoLast()
     if (!action) return setVisible(false)
 
-    if (action.type === 'delete' && action.previousState) {
+    if ((action.type === 'delete' || action.type === 'bulk-delete') && action.previousState) {
       addTask(action.previousState as Task)
+    } else if (action.type === 'bulk-delete' && action.previousTasks?.length) {
+      action.previousTasks.forEach((task) => addTask(task))
+    } else if (action.type === 'bulk-restore' && action.previousTasks?.length) {
+      action.previousTasks.forEach((task) => updateTask(task.id, task))
     } else if ((action.type === 'complete' || action.type === 'archive' || action.type === 'move') && action.previousState) {
       updateTask(action.taskId, action.previousState)
     }
@@ -48,7 +60,7 @@ export default function Toast() {
   if (!visible) return null
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-[150] animate-in slide-in-from-bottom-4 duration-300 md:left-auto md:right-4 md:w-auto">
+    <div role="status" aria-live="polite" className="fixed bottom-4 left-4 right-4 z-[150] animate-in slide-in-from-bottom-4 duration-300 md:left-auto md:right-4 md:w-auto">
       <div className="card flex items-center justify-between gap-4 p-4 shadow-lg">
         <span className="text-sm text-[var(--text)]">{message}</span>
         <div className="flex items-center gap-2">

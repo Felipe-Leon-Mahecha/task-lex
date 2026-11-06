@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Trophy, X } from 'lucide-react'
 import type { Achievement } from '../../lib/achievements'
+import { ACHIEVEMENT_SKIN_REWARDS } from '../../lib/achievements'
 
 interface QueuedItem {
   key: number
@@ -33,8 +34,8 @@ export default function AchievementPopup() {
   if (!current) return null
 
   return (
-    <div className="fixed bottom-20 right-4 z-[160] animate-in slide-in-from-right-4 fade-in duration-300 md:bottom-6">
-      <div className="card relative flex items-center gap-3 border border-[var(--accent)]/40 p-4 pr-8 shadow-lg" style={{ background: 'linear-gradient(135deg, var(--surface), color-mix(in srgb, var(--accent) 12%, var(--surface)))' }}>
+    <div className="fixed bottom-20 left-3 right-3 z-[160] flex justify-end animate-in slide-in-from-right-4 fade-in duration-300 sm:left-auto sm:right-4 sm:max-w-[min(26rem,calc(100vw-2rem))] md:bottom-6">
+      <div className="card relative flex min-w-0 max-w-full items-center gap-3 border border-[var(--accent)]/40 p-4 pr-8 shadow-lg" style={{ background: 'linear-gradient(135deg, var(--surface), color-mix(in srgb, var(--accent) 12%, var(--surface)))' }}>
         <button
           onClick={() => setCurrent(null)}
           className="absolute right-1.5 top-1.5 rounded-full p-1 text-[var(--text-muted)] hover:text-[var(--text)]"
@@ -45,11 +46,11 @@ export default function AchievementPopup() {
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/15">
           <Trophy className="h-5 w-5 text-[var(--accent)]" />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1 break-words">
           <p className="text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">¡Logro desbloqueado!</p>
-          <p className="text-sm font-bold text-[var(--text)]">{current.achievement.title}</p>
-          <p className="truncate text-xs text-[var(--text-muted)]">
-            {current.achievement.desc} · +{current.achievement.reward} monedas
+          <p className="break-words text-sm font-bold text-[var(--text)]">{current.achievement.title}</p>
+          <p className="break-words text-xs text-[var(--text-muted)]">
+            {current.achievement.desc} · {ACHIEVEMENT_SKIN_REWARDS[current.achievement.id] ? 'Fox Fantasma disponible en Tienda → Logros' : `+${current.achievement.reward} monedas en Tienda → Logros`}
           </p>
         </div>
       </div>

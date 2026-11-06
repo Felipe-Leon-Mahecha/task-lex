@@ -1,4 +1,5 @@
 import { getSkinById, getDefaultSkin } from './foxSkins'
+import { pickHalloweenDialogue } from './seasons/halloweenDialogue'
 
 export type FoxState =
   | 'idle'
@@ -29,7 +30,7 @@ export interface FoxStateConfig {
 const FOX_STATES: FoxStateConfig[] = [
   {
     id: 'idle',
-    image: '/fox (IdleDefault).png',
+    image: '/fox/fox (IdleDefault).png',
     label: 'Fox',
     widgetOnly: false,
     dialogues: [
@@ -37,17 +38,22 @@ const FOX_STATES: FoxStateConfig[] = [
       '¿Qué vamos a hacer hoy?',
       'Estoy aquí si me necesitas',
       '¡Hora de ser productivo!',
-      'Dato curioso: los zorros pueden correr a 50 km/h',
-      'Los zorros duermen con la cola sobre la nariz para mantenerla caliente',
+      'Corre, que mentalmente ya me apliqué.',
+      'Los zorros pueden correr a 50 km/h; hoy inviertes tu energía en tareas.',
+      'Un zorro duerme con la cola sobre el hocico para no coger frío... como tu motivación.',
       '¿Ya viste tus tareas pendientes?',
-      'Un zorro puede oír un ratón desde 100 metros de distancia',
+      'Un zorro oye un ratón a 100 metros; tú oyes el cronómetro al arrancar.',
       '¿Necesitas ayuda con algo?',
-      'Los zorros son_animales muy inteligentes y juguetones',
+      'Los zorros somos inteligentes y juguetones. Contigo, el combo completo.',
+      'Organiza una cosa hoy y el resto camina solo. Te lo dice el zorro.',
+      'El día rinde más con una lista clara. ¿La armamos?',
+      'Tarea hecha es zorro contento 🦊',
+      'Planea poco, ejecuta duro. Ahí te dejo el dato.',
     ],
   },
   {
     id: 'alerta',
-    image: '/fox (AlertaNotificación).png',
+    image: '/fox/fox (AlertaNotificación).png',
     label: 'Fox Alerta',
     widgetOnly: false,
     dialogues: [
@@ -56,11 +62,12 @@ const FOX_STATES: FoxStateConfig[] = [
       'Atención: fecha límite hoy',
       '¡Urgente! Revisa esta tarea',
       'Tu tarea está esperando...',
+      '¡Ojo! Que la fecha de hoy no se va a esperar.',
     ],
   },
   {
     id: 'cargando',
-    image: '/fox (CargandoTrabajando).png',
+    image: '/fox/fox (CargandoTrabajando).png',
     label: 'Fox Trabajando',
     widgetOnly: false,
     dialogues: [
@@ -69,11 +76,12 @@ const FOX_STATES: FoxStateConfig[] = [
       'Casi listo...',
       'Procesando tu solicitud...',
       'Un segundito...',
+      'Ya casi; mientras, respira y dale al primer golpecito.',
     ],
   },
   {
     id: 'pensando',
-    image: '/fox (PensandoProcesando).png',
+    image: '/fox/fox (PensandoProcesando).png',
     label: 'Fox Pensando',
     widgetOnly: false,
     dialogues: [
@@ -82,11 +90,12 @@ const FOX_STATES: FoxStateConfig[] = [
       'Procesando...',
       'Un momento...',
       'Estoy en ello...',
+      'Revisando mis apuntes caninos... digo, zorrunos.',
     ],
   },
   {
     id: 'celebracion',
-    image: '/fox (CelebraciónLogro grande).png',
+    image: '/fox/fox (CelebraciónLogro grande).png',
     label: 'Fox Celebrando',
     widgetOnly: false,
     dialogues: [
@@ -97,11 +106,12 @@ const FOX_STATES: FoxStateConfig[] = [
       '¡Eso! ¡No paras de crecer!',
       '¡Campeón! ¿Cómo te sientes?',
       '¡Excelente trabajo!',
+      '¡Eso es! El zorro aplaude con las patitas. 🦊👏',
     ],
   },
   {
     id: 'error',
-    image: '/fox (ErrorFalló algo).png',
+    image: '/fox/fox (ErrorFalló algo).png',
     label: 'Fox Error',
     widgetOnly: false,
     dialogues: [
@@ -110,11 +120,12 @@ const FOX_STATES: FoxStateConfig[] = [
       'Intenté pero fallé...',
       'Error detectado, pero no te preocupes',
       'Vamos a intentarlo de nuevo',
+      'Uy, se me enredó la cola. Reintentemos.',
     ],
   },
   {
     id: 'saludo',
-    image: '/fox (SaludoBienvenida).png',
+    image: '/fox/fox (SaludoBienvenida).png',
     label: 'Fox Saludando',
     widgetOnly: false,
     timeRange: { start: 4, end: 10 },
@@ -124,18 +135,19 @@ const FOX_STATES: FoxStateConfig[] = [
       '¡Arriba! Un nuevo día comienza',
       '¡Buenos días! Hoy puede ser un gran día',
       '¡Hola! Ya es un nuevo día para lograr cosas',
+      '¡Buenos días! Que la energía de hoy alcance para todo.',
     ],
   },
   {
     id: 'programando',
-    image: '/fox (Programandocon laptop).png',
+    image: '/fox/fox (Programandocon laptop).png',
     label: 'Fox Programando',
     widgetOnly: true,
     dialogues: ['Programando...', 'Trabajando en código...', 'Escribiendo...'],
   },
   {
     id: 'tarea_completada',
-    image: '/fox (Tarea completada).png',
+    image: '/fox/fox (Tarea completada).png',
     label: 'Fox Completado',
     widgetOnly: false,
     dialogues: [
@@ -148,7 +160,7 @@ const FOX_STATES: FoxStateConfig[] = [
   },
   {
     id: 'cafe',
-    image: '/fox (Tomando_cafe).png',
+    image: '/fox/fox (Tomando_cafe).png',
     label: 'Fox Café',
     widgetOnly: true,
     timeRange: { start: 3, end: 7 },
@@ -160,7 +172,7 @@ const FOX_STATES: FoxStateConfig[] = [
   },
   {
     id: 'estirandose',
-    image: '/fox (EstirándoseDespertando).png',
+    image: '/fox/fox (EstirándoseDespertando).png',
     label: 'Fox Despertando',
     widgetOnly: false,
     timeRange: { start: 6, end: 11 },
@@ -173,7 +185,7 @@ const FOX_STATES: FoxStateConfig[] = [
   },
   {
     id: 'reloj',
-    image: '/fox (Revisando relojAgenda).png',
+    image: '/fox/fox (Revisando relojAgenda).png',
     label: 'Fox Reloj',
     widgetOnly: true,
     dialogues: [
@@ -184,7 +196,7 @@ const FOX_STATES: FoxStateConfig[] = [
   },
   {
     id: 'traje',
-    image: '/fox (Traje elegante).png',
+    image: '/fox/fox (Traje elegante).png',
     label: 'Fox Elegante',
     widgetOnly: true,
     dialogues: [
@@ -195,7 +207,7 @@ const FOX_STATES: FoxStateConfig[] = [
   },
   {
     id: 'enojado',
-    image: '/fox (enojado).png',
+    image: '/fox/fox (enojado).png',
     label: 'Fox Enojado',
     widgetOnly: true,
     dialogues: [
@@ -207,7 +219,7 @@ const FOX_STATES: FoxStateConfig[] = [
   },
   {
     id: 'llorando',
-    image: '/fox (llorando).png',
+    image: '/fox/fox (llorando).png',
     label: 'Fox Triste',
     widgetOnly: true,
     dialogues: [
@@ -218,6 +230,10 @@ const FOX_STATES: FoxStateConfig[] = [
     ],
   },
 ]
+
+function pickFoxDialogue(state: FoxStateConfig): string {
+  return pickHalloweenDialogue('fox') ?? state.dialogues[Math.floor(Math.random() * state.dialogues.length)]
+}
 
 export function getFoxState(): { state: FoxStateConfig; dialogue: string } {
   const now = new Date()
@@ -232,7 +248,7 @@ export function getFoxState(): { state: FoxStateConfig; dialogue: string } {
   if (daysSinceOpen >= 3) {
     const states = [FOX_STATES.find((s) => s.id === 'enojado')!, FOX_STATES.find((s) => s.id === 'llorando')!]
     const state = states[Math.floor(Math.random() * states.length)]
-    return { state: { ...state, image: equippedImage }, dialogue: state.dialogues[Math.floor(Math.random() * state.dialogues.length)] }
+    return { state: { ...state, image: equippedImage }, dialogue: pickFoxDialogue(state) }
   }
 
   const saludo = FOX_STATES.find((s) => s.id === 'saludo')!
@@ -241,7 +257,7 @@ export function getFoxState(): { state: FoxStateConfig; dialogue: string } {
     const lastSaludo = localStorage.getItem('fox-last-saludo')
     if (lastSaludo !== today) {
       localStorage.setItem('fox-last-saludo', today)
-      return { state: { ...saludo, image: equippedImage }, dialogue: saludo.dialogues[Math.floor(Math.random() * saludo.dialogues.length)] }
+      return { state: { ...saludo, image: equippedImage }, dialogue: pickFoxDialogue(saludo) }
     }
   }
 
@@ -251,12 +267,12 @@ export function getFoxState(): { state: FoxStateConfig; dialogue: string } {
     if (lastEstirandose !== today && Math.random() > 0.5) {
       localStorage.setItem('fox-last-estirandose', today)
       const state = FOX_STATES.find((s) => s.id === 'estirandose')!
-      return { state: { ...state, image: equippedImage }, dialogue: state.dialogues[Math.floor(Math.random() * state.dialogues.length)] }
+      return { state: { ...state, image: equippedImage }, dialogue: pickFoxDialogue(state) }
     }
   }
 
   const idle = FOX_STATES.find((s) => s.id === 'idle')!
-  return { state: { ...idle, image: equippedImage }, dialogue: idle.dialogues[Math.floor(Math.random() * idle.dialogues.length)] }
+  return { state: { ...idle, image: equippedImage }, dialogue: pickFoxDialogue(idle) }
 }
 
 export function getFoxStateForContext(
@@ -265,7 +281,7 @@ export function getFoxStateForContext(
   const equippedImage = getEquippedSkinImage()
   const pick = (id: FoxState) => {
     const state = FOX_STATES.find((s) => s.id === id)!
-    return { state: { ...state, image: equippedImage }, dialogue: state.dialogues[Math.floor(Math.random() * state.dialogues.length)] }
+    return { state: { ...state, image: equippedImage }, dialogue: pickFoxDialogue(state) }
   }
 
   switch (context) {
@@ -308,13 +324,13 @@ function getWidgetFox(): { state: FoxStateConfig; dialogue: string } {
 
   if (hour >= 3 && hour < 7) {
     const cafe = FOX_STATES.find((s) => s.id === 'cafe')!
-    return { state: { ...cafe, image: equippedImage }, dialogue: cafe.dialogues[Math.floor(Math.random() * cafe.dialogues.length)] }
+    return { state: { ...cafe, image: equippedImage }, dialogue: pickFoxDialogue(cafe) }
   }
 
   const widgetStates = FOX_STATES.filter((s) => s.widgetOnly && s.id !== 'enojado' && s.id !== 'llorando' && s.id !== 'cafe')
   const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24))
   const state = widgetStates[dayOfYear % widgetStates.length]
-  return { state: { ...state, image: equippedImage }, dialogue: state.dialogues[Math.floor(Math.random() * state.dialogues.length)] }
+  return { state: { ...state, image: equippedImage }, dialogue: pickFoxDialogue(state) }
 }
 
 export function setFoxProcessingStart() {

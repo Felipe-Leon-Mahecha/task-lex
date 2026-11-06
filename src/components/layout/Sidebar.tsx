@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type TouchEvent } from 'react'
-import { Link, NavLink } from 'react-router-dom'
-import { LayoutDashboard, Archive, Settings, X, Plus, Star, MessageSquareHeart, GripVertical, BarChart3, ShoppingBag, type LucideIcon } from 'lucide-react'
+import { Link, NavLink, useLocation } from 'react-router-dom'
+import { LayoutDashboard, Archive, Settings, X, Plus, Star, MessageSquareHeart, GripVertical, BarChart3, ShoppingBag, NotebookPen, CircleHelp, Inbox, CalendarDays, ChevronDown, type LucideIcon } from 'lucide-react'
 import { useThemeStore } from '../../store/theme'
 import { useUIStore } from '../../store/ui'
 import { useSectionsStore } from '../../store/sections'
@@ -9,7 +9,8 @@ import { hexToRgba } from '../../lib/image'
 import { APP_NAME, APP_VERSION } from '../../lib/appInfo'
 import type { ThemeConfig } from '../../types/task'
 import NewSectionModal from './NewSectionModal'
-import FoxShop from '../ui/FoxShop'
+import { claimableAchievements } from '../../lib/achievements'
+import { playAppSound } from '../../lib/soundEffects'
 
 type Themes = Record<string, ThemeConfig>
 
@@ -43,10 +44,24 @@ function sectionCardStyle(secId: string, themes: Themes, active: boolean): CSSPr
 }
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
+  const location = useLocation()
   const themes = useThemeStore((s) => s.themes)
   const sections = useSectionsStore((s) => s.sections)
   const reorderSections = useSectionsStore((s) => s.reorderSections)
   const [dragId, setDragId] = useState<string | null>(null)
+  const [hasAchievementReward, setHasAchievementReward] = useState(() => claimableAchievements().length > 0)
+  const moreRoutes = ['/archivo', '/estadisticas', '/opiniones', '/ajustes', '/ayuda']
+  const [moreOpen, setMoreOpen] = useState(() => moreRoutes.some((route) => location.pathname.startsWith(route)))
+
+  useEffect(() => {
+    if (moreRoutes.some((route) => location.pathname.startsWith(route))) setMoreOpen(true)
+  }, [location.pathname])
+
+  useEffect(() => {
+    const refresh = () => setHasAchievementReward(claimableAchievements().length > 0)
+    window.addEventListener('tasklex:achievement-pending', refresh)
+    return () => window.removeEventListener('tasklex:achievement-pending', refresh)
+  }, [])
 
   const onDrop = (e: DragEvent, targetId: string) => {
     e.preventDefault()
@@ -59,7 +74,12 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
       key={to}
       to={to}
       end={end ?? to === '/'}
-      onClick={onNavigate}
+      data-tut={to === '/notas' ? 'notes' : to === '/tienda' ? 'shop' : undefined}
+      onClick={() => {
+        if (to === '/notas') playAppSound('notes-open', 0.13)
+        if (to === '/tienda') playAppSound('shop-open', 0.13)
+        onNavigate?.()
+      }}
       className={({ isActive }) =>
         `flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
           isDashboard ? 'text-base font-semibold' : 'text-sm'
@@ -70,14 +90,22 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
         }`
       }
     >
-      <Icon className={`${isDashboard ? 'h-5 w-5' : 'h-4 w-4'}`} />
+      <span className="relative">
+        <Icon className={`${isDashboard ? 'h-5 w-5' : 'h-4 w-4'}`} />
+        {to === '/tienda' && hasAchievementReward && <span className="absolute -right-1 -top-1 h-2.5 w-2.5 animate-pulse rounded-full bg-rose-500 ring-2 ring-[var(--bg)]" />}
+      </span>
       {label}
     </NavLink>
   )
 
   return (
     <div className="flex flex-col gap-2">
-      {renderLink('/', 'Dashboard', LayoutDashboard, true, true)}
+      <p className="px-3 pb-0.5 pt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">Mi día</p>
+      {renderLink('/', 'Hoy', LayoutDashboard, true, true)}
+      {renderLink('/bandeja', 'Bandeja de entrada', Inbox)}
+      {renderLink('/semana', 'Mi semana', CalendarDays)}
+      {renderLink('/notas', 'Notas', NotebookPen)}
+      {sections.length > 0 && <p className="px-3 pb-0.5 pt-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">Mis espacios</p>}
       {sections.map((sec) => {
         const Icon = ICON_MAP[sec.icon] ?? Star
         return (
@@ -106,10 +134,19 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
           </NavLink>
         )
       })}
-      {renderLink('/archivo', 'Archivo', Archive)}
-      {renderLink('/opiniones', 'Opiniones', MessageSquareHeart)}
-      {renderLink('/estadisticas', 'Estadísticas', BarChart3)}
-      {renderLink('/ajustes', 'Ajustes', Settings)}
+      <details open={moreOpen} onToggle={(event) => setMoreOpen(event.currentTarget.open)} className="mt-2">
+        <summary className="flex cursor-pointer list-none items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold text-[var(--text-muted)] transition hover:bg-[var(--surface)] hover:text-[var(--text)] [&::-webkit-details-marker]:hidden">
+          <span>Más</span><ChevronDown className={`h-4 w-4 transition-transform ${moreOpen ? 'rotate-180' : ''}`} />
+        </summary>
+        <div className="mt-1 flex flex-col gap-1 pl-2">
+          {renderLink('/archivo', 'Archivo', Archive)}
+          {renderLink('/estadisticas', 'Estadísticas', BarChart3)}
+          {renderLink('/tienda', 'Tienda de mascotas', ShoppingBag)}
+          {renderLink('/opiniones', 'Opiniones', MessageSquareHeart)}
+          {renderLink('/ajustes', 'Ajustes', Settings)}
+          {renderLink('/ayuda', 'Centro de ayuda', CircleHelp)}
+        </div>
+      </details>
     </div>
   )
 }
@@ -118,7 +155,6 @@ export default function Sidebar() {
   const open = useUIStore((s) => s.sidebarOpen)
   const close = useUIStore((s) => s.closeSidebar)
   const [newOpen, setNewOpen] = useState(false)
-  const [shopOpen, setShopOpen] = useState(false)
   const touchX = useRef<number | null>(null)
   const touchY = useRef<number | null>(null)
 
@@ -162,17 +198,10 @@ export default function Sidebar() {
       >
         <div className="mb-6 mt-2 flex shrink-0 items-center justify-between px-2">
           <div className="flex items-center gap-2">
-            <img src="/icons/icon-192.png" alt="Flux" className="h-8 w-8 rounded-lg" />
-            <span className="text-sm font-bold tracking-tight">Flux</span>
+            <img src="/icons/icon-192.png" alt="Quacker" className="h-8 w-8 rounded-lg" />
+            <span className="text-sm font-bold tracking-tight">Quacker</span>
           </div>
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => { setShopOpen(true); close() }}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/20"
-              aria-label="Tienda Fox"
-            >
-              <ShoppingBag className="h-4 w-4" />
-            </button>
             <button
               onClick={close}
               className="rounded-full p-2 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
@@ -205,16 +234,9 @@ export default function Sidebar() {
       <aside className="hidden w-64 shrink-0 flex-col gap-2 border-r border-[var(--border)] p-4 sm:flex">
         <div className="mb-4 mt-2 flex shrink-0 items-center justify-between px-2">
           <div className="flex items-center gap-2">
-            <img src="/icons/icon-192.png" alt="Flux" className="h-8 w-8 rounded-lg" />
-            <span className="text-sm font-bold tracking-tight">Flux</span>
+            <img src="/icons/icon-192.png" alt="Quacker" className="h-8 w-8 rounded-lg" />
+            <span className="text-sm font-bold tracking-tight">Quacker</span>
           </div>
-          <button
-            onClick={() => setShopOpen(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/20"
-            aria-label="Tienda Fox"
-          >
-            <ShoppingBag className="h-4 w-4" />
-          </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           <NavList />
@@ -233,7 +255,6 @@ export default function Sidebar() {
         </Link>
       </aside>
       <NewSectionModal open={newOpen} onClose={() => setNewOpen(false)} />
-      {shopOpen && <FoxShop onClose={() => setShopOpen(false)} />}
     </>
   )
 }

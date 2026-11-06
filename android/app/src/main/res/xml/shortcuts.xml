@@ -3,7 +3,7 @@
     <shortcut
         android:shortcutId="create_task"
         android:enabled="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_shortcut_task"
         android:shortcutShortLabel="@string/shortcut_create_task"
         android:shortcutLongLabel="@string/shortcut_create_task_long">
         <intent
@@ -14,9 +14,22 @@
         </intent>
     </shortcut>
     <shortcut
+        android:shortcutId="create_note"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_note"
+        android:shortcutShortLabel="@string/shortcut_create_note"
+        android:shortcutLongLabel="@string/shortcut_create_note_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.tasklex.app"
+            android:targetClass="com.tasklex.app.MainActivity">
+            <data android:scheme="flux" android:host="note" />
+        </intent>
+    </shortcut>
+    <shortcut
         android:shortcutId="view_today"
         android:enabled="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_shortcut_today"
         android:shortcutShortLabel="@string/shortcut_view_today"
         android:shortcutLongLabel="@string/shortcut_view_today_long">
         <intent
@@ -24,6 +37,19 @@
             android:targetPackage="com.tasklex.app"
             android:targetClass="com.tasklex.app.MainActivity">
             <data android:scheme="flux" android:host="dashboard" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="start_focus"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_focus"
+        android:shortcutShortLabel="@string/shortcut_start_focus"
+        android:shortcutLongLabel="@string/shortcut_start_focus_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.tasklex.app"
+            android:targetClass="com.tasklex.app.MainActivity">
+            <data android:scheme="flux" android:host="focus" />
         </intent>
     </shortcut>
 </shortcuts>

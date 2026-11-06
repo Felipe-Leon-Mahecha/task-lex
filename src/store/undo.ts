@@ -2,9 +2,10 @@ import { create } from 'zustand'
 import type { Task } from '../types/task'
 
 interface UndoAction {
-  type: 'complete' | 'archive' | 'delete' | 'move'
+  type: 'complete' | 'archive' | 'delete' | 'move' | 'bulk-restore' | 'bulk-delete'
   taskId: string
   previousState?: Partial<Task>
+  previousTasks?: Task[]
   timestamp: number
 }
 

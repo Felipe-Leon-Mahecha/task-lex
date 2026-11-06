@@ -37,7 +37,6 @@ export default function NewSectionModal({
         <div>
           <label className="mb-1 block text-xs font-medium text-[var(--text-muted)]">Nombre</label>
           <input
-            autoFocus
             value={label}
             onChange={(e) => {
               setLabel(e.target.value)

@@ -7,6 +7,7 @@ interface UIState {
   sidebarOpen: boolean
   focusOpen: boolean
   updateModalOpen: boolean
+  shopOpen: boolean
   setView: (sectionId: string, view: ViewMode) => void
   openSidebar: () => void
   closeSidebar: () => void
@@ -14,6 +15,8 @@ interface UIState {
   closeFocus: () => void
   openUpdateModal: () => void
   closeUpdateModal: () => void
+  openShop: () => void
+  closeShop: () => void
 }
 
 export const useUIStore = create<UIState>()(
@@ -23,6 +26,7 @@ export const useUIStore = create<UIState>()(
       sidebarOpen: false,
       focusOpen: false,
       updateModalOpen: false,
+      shopOpen: false,
       setView: (id, view) => set((s) => ({ views: { ...s.views, [id]: view } })),
       openSidebar: () => set({ sidebarOpen: true }),
       closeSidebar: () => set({ sidebarOpen: false }),
@@ -30,6 +34,8 @@ export const useUIStore = create<UIState>()(
       closeFocus: () => set({ focusOpen: false }),
       openUpdateModal: () => set({ updateModalOpen: true }),
       closeUpdateModal: () => set({ updateModalOpen: false }),
+      openShop: () => set({ shopOpen: true }),
+      closeShop: () => set({ shopOpen: false }),
     }),
     { name: 'task-lex-ui', partialize: (s) => ({ views: s.views }) },
   ),

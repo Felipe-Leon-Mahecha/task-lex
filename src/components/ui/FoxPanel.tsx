@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import { Mic, MicOff, Check, X, Loader2, ChevronDown, CalendarClock, HelpCircle, ListTree, BatteryCharging, Sparkles, ArrowRight, Zap, Smile, Moon, Target, MessageCircle, Send, RefreshCw } from 'lucide-react'
+import { Mic, MicOff, Check, X, Loader2, ChevronDown, CalendarClock, HelpCircle, ListTree, BatteryCharging, Sparkles, ArrowRight, Zap, Smile, Moon, Target, MessageCircle, Send, RefreshCw, Flame, ListTodo, CalendarPlus, Crown, Pin, PinOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { parseTaskWithAI, type ParsedTask } from '../../lib/ai'
-import { planDay, askFox, breakDownTask, energyCheck, coachInsight, chatWithFox, rescheduleOverdue, dailyBriefing, type FoxTaskRef, type PlanBlock, type ChatMessage, type RescheduleItem } from '../../lib/foxAi'
+import { planDay, askFox, breakDownTask, energyCheck, coachInsight, chatWithFox, rescheduleOverdue, dailyBriefing, type FoxTaskRef, type PlanBlock, type ChatMessage, type RescheduleItem, type AssistantAction } from '../../lib/foxAi'
 import { isVoiceRecognitionSupported, startVoiceRecognition } from '../../lib/voice'
 import { useSectionsStore } from '../../store/sections'
 import { useTasksStore } from '../../store/tasks'
@@ -22,7 +22,16 @@ import {
   type FoxStateConfig,
 } from '../../lib/fox'
 import { useFoxSkinsStore } from '../../store/foxSkins'
-import { getSkinById } from '../../lib/foxSkins'
+import { useAuthStore } from '../../store/auth'
+import { useNotesStore } from '../../store/notes'
+import { ADMIN_EMAIL } from '../../lib/appInfo'
+import { fetchCalendarEvents } from '../../lib/calendar'
+import type { CalendarEvent } from '@ebarooni/capacitor-calendar'
+import { getSkinById, getDefaultSkin } from '../../lib/foxSkins'
+import QuackingtonSkinPet from '../pet/QuackingtonSkinPet'
+import PetSpeechBubble from '../pet/PetSpeechBubble'
+import { pickQuackingtonLine } from '../../lib/quackington'
+import { getQuackingtonSkinById, pickQuackingtonSkinLine } from '../../lib/quackingtonSkins'
 import type { Subtask } from '../../types/task'
 
 type FoxMode = 'crear' | 'preguntar' | 'dia' | 'desglosar' | 'energia' | 'coach' | 'chat' | 'reagendar'
@@ -38,14 +47,13 @@ const MODES: { id: FoxMode; label: string; icon: typeof Sparkles }[] = [
   { id: 'reagendar', label: 'Reagendar', icon: RefreshCw },
 ]
 
-function FoxBubble({ dialogue, direction = 'up', className }: { dialogue: string; direction?: 'up' | 'down'; className?: string }) {
-  return (
-    <div className={`animate-fox-bubble relative max-w-[300px] min-w-[140px] rounded-full bg-white px-4 py-1.5 text-[12px] leading-normal text-gray-800 shadow-md dark:bg-gray-100 ${className ?? ''}`}>
-      {direction === 'down' && <div className="absolute -top-1 left-6 h-2 w-2 rotate-45 bg-white dark:bg-gray-100" />}
-      {dialogue}
-      {direction === 'up' && <div className="absolute -bottom-1 left-6 h-2 w-2 rotate-45 bg-white dark:bg-gray-100" />}
-    </div>
-  )
+function FoxBubble({ dialogue, direction = 'up', align = 'center', className }: { dialogue: string; direction?: 'up' | 'down'; align?: 'left' | 'center' | 'right'; className?: string }) {
+  return <PetSpeechBubble placement={direction === 'up' ? 'above' : 'below'} align={align} className={className}>{dialogue}</PetSpeechBubble>
+}
+
+function DuckBubble({ tick, skinId, direction = 'up' }: { tick: string; skinId: string; direction?: 'up' | 'down' }) {
+  const line = useMemo(() => skinId === 'animado' ? pickQuackingtonLine('idle') : pickQuackingtonSkinLine(skinId), [tick, skinId])
+  return <FoxBubble dialogue={line} direction={direction} />
 }
 
 export default function FoxPanel() {
@@ -75,23 +83,60 @@ export default function FoxPanel() {
   const [coachResult, setCoachResult] = useState<{ insight: string; tips: string[] } | null>(null)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [chatInput, setChatInput] = useState('')
+  const [pendingActions, setPendingActions] = useState<AssistantAction[]>([])
+  const [actionNotice, setActionNotice] = useState('')
   const [reschedulePlan, setReschedulePlan] = useState<RescheduleItem[] | null>(null)
   const [rescheduleApplied, setRescheduleApplied] = useState(false)
+  const [freeTab, setFreeTab] = useState<'paywall' | 'basico'>('paywall')
+  const [rescheduleLocalApplied, setRescheduleLocalApplied] = useState(false)
+  const [calEvents, setCalEvents] = useState<CalendarEvent[] | null>(null)
+  const [calUnavailable, setCalUnavailable] = useState(false)
+  const [calLoading, setCalLoading] = useState(false)
+  const [calSelected, setCalSelected] = useState<Record<string, boolean>>({})
+  const [calImported, setCalImported] = useState(0)
   const briefingDoneRef = useRef(false)
+  const floatingPetRef = useRef<HTMLDivElement>(null)
+  const petDragRef = useRef<{ id: number; startX: number; startY: number; x: number; y: number; currentX: number; currentY: number; moved: boolean } | null>(null)
+  const suppressPetClickRef = useRef(false)
 
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const bubbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const busyRef = useRef(false)
 
   const sections = useSectionsStore((s) => s.sections)
+  const addSection = useSectionsStore((s) => s.addSection)
+  const renameSection = useSectionsStore((s) => s.renameSection)
   const tasks = useTasksStore((s) => s.tasks)
   const addTask = useTasksStore((s) => s.addTask)
   const updateTask = useTasksStore((s) => s.updateTask)
+  const notes = useNotesStore((s) => s.notes)
+  const noteFolders = useNotesStore((s) => s.folders)
+  const createNote = useNotesStore((s) => s.createNote)
+  const updateNote = useNotesStore((s) => s.updateNote)
   const foxEnabled = useSettingsStore((s) => s.foxEnabled)
   const foxRandomMessages = useSettingsStore((s) => s.foxRandomMessages)
+  const petQuotes = useSettingsStore((s) => s.petQuotes)
+  const petAnchored = useSettingsStore((s) => s.petAnchored)
+  const petPosition = useSettingsStore((s) => s.petPosition)
+  const setPetAnchored = useSettingsStore((s) => s.setPetAnchored)
+  const setPetPosition = useSettingsStore((s) => s.setPetPosition)
+  const [floatingPetPosition, setFloatingPetPosition] = useState(petPosition)
   const equipped = useFoxSkinsStore((s) => s.equipped)
-  const skinImage = equipped !== 'idle' ? getSkinById(equipped)?.image ?? null : null
+  const pet = useFoxSkinsStore((s) => s.pet)
+  const quackingtonSkin = useFoxSkinsStore((s) => s.quackingtonSkin)
+  const unlockedFoxSkins = useFoxSkinsStore((s) => s.unlocked)
+  const unlockedDuckSkins = useFoxSkinsStore((s) => s.quackingtonSkinsUnlocked)
+  const quackingtonOwned = useFoxSkinsStore((s) => s.quackingtonOwned)
+  const equipSkin = useFoxSkinsStore((s) => s.equipSkin)
+  const equipQuackingtonSkin = useFoxSkinsStore((s) => s.equipQuackingtonSkin)
+  const setPet = useFoxSkinsStore((s) => s.setPet)
+  const premium = useFoxSkinsStore((s) => s.premium)
+  const user = useAuthStore((s) => s.user)
+  const skinImage = getSkinById(equipped)?.image ?? getDefaultSkin().image
+
+  const canUseAI = premium || user?.email === ADMIN_EMAIL
 
   const activeTasks = useMemo(
     () => tasks.filter((t) => t.status !== 'done' && !t.archived),
@@ -103,35 +148,72 @@ export default function FoxPanel() {
     [activeTasks],
   )
 
+  const pendientesHoy = useMemo(
+    () => activeTasks.filter((t) => t.dueDate && sameDay(t.dueDate, new Date())).length,
+    [activeTasks],
+  )
+
+  const proximaTarea = useMemo(() => {
+    const inicio = startOfDay(new Date())
+    return activeTasks
+      .filter((t) => t.dueDate && t.dueDate.getTime() >= inicio.getTime())
+      .sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime())[0] ?? null
+  }, [activeTasks])
+
   const taskRefs: FoxTaskRef[] = useMemo(() => {
     const label = (id: string) => sections.find((s) => s.id === id)?.label ?? id
     return activeTasks.slice(0, 60).map((t) => ({
       id: t.id,
       title: t.title,
       section: label(t.sectionId),
+      sectionId: t.sectionId,
       priority: t.priority,
       dueDate: t.dueDate ? new Date(t.dueDate).toISOString() : null,
     }))
   }, [activeTasks, sections])
 
+  const chatAppContext = () => {
+    const plain = (html: string) => html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim()
+    let weekBlocks: unknown[] = []
+    try {
+      const raw = localStorage.getItem(`quacker-weekly-routine:${user?.uid ?? 'local'}`)
+      const parsed = raw ? JSON.parse(raw) : []
+      if (Array.isArray(parsed)) weekBlocks = parsed.slice(0, 40)
+    } catch {}
+    return {
+      sections: sections.slice(0, 30).map((s) => ({ id: s.id, label: s.label })),
+      notes: notes.filter((n) => !n.privateNote && !n.privateData).slice(0, 30).map((n) => ({ id: n.id, title: n.title, folderId: n.folderId, content: n.blocks.map((b) => plain(b.html)).join('\n').slice(0, 700) })),
+      folders: noteFolders.slice(0, 30).map((f) => ({ id: f.id, name: f.name })),
+      weekBlocks,
+      skins: {
+        fox: unlockedFoxSkins,
+        quackington: unlockedDuckSkins,
+        quackingtonOwned,
+        activePet: pet,
+      },
+    }
+  }
+
   const showFoxMessage = useCallback(() => {
+    if (!petQuotes) return
     const { state, dialogue } = getFoxState()
     setFoxContext(state)
     setFoxDialogue(dialogue)
     setShowBubble(true)
     if (bubbleTimerRef.current) clearTimeout(bubbleTimerRef.current)
     bubbleTimerRef.current = setTimeout(() => setShowBubble(false), 6000)
-  }, [])
+  }, [petQuotes])
 
   useEffect(() => {
     recordAppOpen()
     const { state, dialogue } = getFoxState()
     setFoxContext(state)
     setFoxDialogue(dialogue)
+    if (!petQuotes) return
     setShowBubble(true)
     bubbleTimerRef.current = setTimeout(() => setShowBubble(false), 5000)
     return () => { if (bubbleTimerRef.current) clearTimeout(bubbleTimerRef.current) }
-  }, [])
+  }, [petQuotes])
 
   useEffect(() => {
     if (!foxRandomMessages || !foxEnabled || open) return
@@ -194,7 +276,8 @@ export default function FoxPanel() {
 
   const handleParse = async () => {
     const text = prompt.trim()
-    if (!text) return
+    if (!text || busyRef.current) return
+    busyRef.current = true
     setLoading(true)
     setError(null)
     setParsed(null)
@@ -210,13 +293,15 @@ export default function FoxPanel() {
       updateFox('error')
       setError(e instanceof Error ? e.message : 'Error al procesar')
     } finally {
+      busyRef.current = false
       setLoading(false)
     }
   }
 
   const handleAsk = async () => {
     const text = prompt.trim()
-    if (!text) return
+    if (!text || busyRef.current) return
+    busyRef.current = true
     setLoading(true)
     setError(null)
     setAnswer('')
@@ -229,6 +314,7 @@ export default function FoxPanel() {
       updateFox('error')
       setError(e instanceof Error ? e.message : 'Error al preguntar')
     } finally {
+      busyRef.current = false
       setLoading(false)
     }
   }
@@ -367,7 +453,8 @@ export default function FoxPanel() {
 
   const handleChatSend = async () => {
     const text = chatInput.trim()
-    if (!text || loading) return
+    if (!text || loading || busyRef.current) return
+    busyRef.current = true
     const history: ChatMessage[] = [...chatMessages, { role: 'user', text }]
     setChatMessages(history)
     setChatInput('')
@@ -375,15 +462,113 @@ export default function FoxPanel() {
     setError(null)
     updateFox('parsing')
     try {
-      const res = await chatWithFox(history.slice(-12), taskRefs, coachStats)
+      const res = await chatWithFox(history.slice(-12), taskRefs, coachStats, pet, mascotName, chatAppContext())
       setChatMessages([...history, { role: 'fox', text: res.reply }])
+      setPendingActions(res.actions)
+      setActionNotice('')
       updateFox('done')
     } catch (e) {
       updateFox('error')
-      setChatMessages([...history, { role: 'fox', text: 'Uy, se me enredaron las colas. Intenta de nuevo.' }])
+      const msg = e instanceof Error ? e.message : ''
+      setChatMessages([
+        ...history,
+        {
+          role: 'fox',
+          text: /premium/i.test(msg)
+            ? 'Esta función es de Quacker Premium. Desbloquéala en la tienda para seguir conversando conmigo.'
+            : msg
+              ? `No pude conectarme: ${msg}`
+              : 'Uy, se me enredaron las colas. Intenta de nuevo.',
+        },
+      ])
     } finally {
+      busyRef.current = false
       setLoading(false)
     }
+  }
+
+  const applyChatActions = () => {
+    let applied = 0
+    const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!)
+    for (const action of pendingActions) {
+      const title = action.title?.trim().slice(0, 120) ?? ''
+      const content = action.content?.trim().slice(0, 5000) ?? ''
+      const existingTask = action.targetId ? tasks.find((t) => t.id === action.targetId && !t.archived) : undefined
+      const existingNote = action.targetId ? notes.find((n) => n.id === action.targetId && !n.privateNote && !n.privateData) : undefined
+      const date = action.dueDate ? new Date(action.dueDate) : null
+      switch (action.type) {
+        case 'create_task': {
+          const section = sections.find((s) => s.id === action.sectionId) ?? sections[0]
+          if (!title || !section || (action.dueDate && (!date || Number.isNaN(date.getTime())))) continue
+          addTask(createTask(section.id, { title, description: (action.description ?? '').slice(0, 1000), dueDate: date, priority: action.priority ?? 'media', status: 'pending', recurrence: 'none', focusDay: false, reminderLead: null, reminder2HoursBefore: false, subtasks: [], notesLinks: [], images: [], tags: [] }))
+          applied++; break
+        }
+        case 'update_task': {
+          if (!existingTask || (action.sectionId && !sections.some((s) => s.id === action.sectionId))) continue
+          const patch: Record<string, unknown> = {}
+          if (title) patch.title = title
+          if (action.description !== undefined) patch.description = action.description.slice(0, 1000)
+          if (action.priority) patch.priority = action.priority
+          if (action.dueDate !== undefined) {
+            if (action.dueDate && (!date || Number.isNaN(date.getTime()))) continue
+            patch.dueDate = date
+          }
+          if (action.sectionId) patch.sectionId = action.sectionId
+          if (!Object.keys(patch).length) continue
+          updateTask(existingTask.id, patch); applied++; break
+        }
+        case 'create_note': {
+          if (!title || (action.folderId && !noteFolders.some((f) => f.id === action.folderId))) continue
+          const note = createNote(action.folderId || null)
+          updateNote(note.id, { title, blocks: [{ id: note.blocks[0].id, type: 'text', html: `<p>${escapeHtml(content || action.description || '')}</p>`, checked: false }] })
+          applied++; break
+        }
+        case 'update_note': {
+          if (!existingNote || (!title && !content)) continue
+          updateNote(existingNote.id, { ...(title ? { title } : {}), ...(content ? { blocks: [{ id: existingNote.blocks[0]?.id ?? crypto.randomUUID(), type: 'text', html: `<p>${escapeHtml(content)}</p>`, checked: false }] } : {}) })
+          applied++; break
+        }
+        case 'create_section': {
+          if (!title || sections.some((section) => section.label.trim().toLowerCase() === title.toLowerCase())) continue
+          addSection(title, (action.icon || 'ListTodo').slice(0, 32)); applied++; break
+        }
+        case 'rename_section': {
+          const section = sections.find((item) => item.id === action.targetId)
+          if (!section || !title || sections.some((item) => item.id !== section.id && item.label.trim().toLowerCase() === title.toLowerCase())) continue
+          renameSection(section.id, title); applied++; break
+        }
+        case 'create_week_block': case 'update_week_block': {
+          const blockTitle = title
+          if (!blockTitle || !/^([01]\d|2[0-3]):[0-5]\d$/.test(action.start ?? '') || !/^([01]\d|2[0-3]):[0-5]\d$/.test(action.end ?? '') || (action.date && !/^\d{4}-\d{2}-\d{2}$/.test(action.date)) || (!action.date && !(action.days?.length))) continue
+          if (action.type === 'update_week_block' && !action.targetId) continue
+          localStorage.setItem('quacker-ai-week-action', JSON.stringify({ ...action, title: blockTitle, id: action.targetId }))
+          setOpen(false)
+          navigate('/semana')
+          applied++; break
+        }
+        case 'equip_skin': {
+          const id = action.skinId ?? ''
+          const targetPet = action.pet ?? pet
+          if (targetPet === 'quackington' && quackingtonOwned && unlockedDuckSkins.includes(id)) equipQuackingtonSkin(id)
+          else if (targetPet === 'fox' && unlockedFoxSkins.includes(id)) { setPet('fox'); equipSkin(id) }
+          else continue
+          applied++; break
+        }
+        case 'set_active_pet': {
+          if (action.pet === 'fox') { setPet('fox'); applied++ }
+          else if (action.pet === 'quackington' && quackingtonOwned) { setPet('quackington'); applied++ }
+          break
+        }
+        case 'navigate': {
+          const allowed = new Set(['/', '/semana', '/notas', '/tienda', '/ajustes', '/estadisticas', '/temporadas', '/archivo', '/opiniones', '/ayuda', '/bandeja', '/plan-dia', '/creditos'])
+          const validSectionRoute = action.route?.startsWith('/s/') && sections.some((section) => action.route === `/s/${section.id}`)
+          if (action.route && (allowed.has(action.route) || validSectionRoute)) { setOpen(false); navigate(action.route); applied++ }
+          break
+        }
+      }
+    }
+    setActionNotice(applied ? `Listo: apliqué ${applied} cambio${applied === 1 ? '' : 's'}.` : 'No pude aplicar la propuesta porque algunos datos ya no coinciden. Pídele otra propuesta a tu asistente.')
+    setPendingActions([])
   }
 
   useEffect(() => {
@@ -426,8 +611,80 @@ export default function FoxPanel() {
     updateFox('completed')
   }
 
+  const applyLocalReschedule = () => {
+    const now = new Date()
+    let moved = 0
+    for (const t of overdueTasks) {
+      const target = new Date(now)
+      target.setHours(9, 0, 0, 0)
+      if (target.getTime() <= now.getTime() + 30 * 60 * 1000) target.setHours(18, 0, 0, 0)
+      updateTask(t.id, { dueDate: target })
+      moved++
+    }
+    if (moved > 0) {
+      setRescheduleLocalApplied(true)
+      setTimeout(() => setRescheduleLocalApplied(false), 5000)
+    }
+  }
+
+  const handleFetchCalendar = async () => {
+    setCalLoading(true)
+    try {
+      const now = new Date()
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+      const events = await fetchCalendarEvents(start, new Date(start.getTime() + 86400000))
+      if (events === null) {
+        setCalEvents([])
+        setCalUnavailable(true)
+      } else {
+        setCalEvents(events)
+        setCalUnavailable(false)
+        setCalSelected(Object.fromEntries(events.map((e) => [e.id, true])))
+      }
+    } finally {
+      setCalLoading(false)
+    }
+  }
+
+  const toggleCalEvent = (id: string) => setCalSelected((s) => ({ ...s, [id]: !s[id] }))
+
+  const handleImportEvents = () => {
+    if (!calEvents || !sectionId) return
+    let n = 0
+    for (const e of calEvents) {
+      if (!calSelected[e.id]) continue
+      addTask(createTask(sectionId, {
+        title: e.title || 'Evento',
+        description: e.description ?? '',
+        dueDate: new Date(e.startDate),
+        priority: 'media',
+        status: 'pending',
+        recurrence: 'none',
+        focusDay: false,
+        reminderLead: null,
+        reminder2HoursBefore: false,
+        subtasks: [],
+        notesLinks: [],
+        images: [],
+        tags: [],
+      }))
+      n++
+    }
+    if (n > 0) {
+      setCalImported(n)
+      setCalEvents(null)
+      setCalUnavailable(false)
+      setTimeout(() => setCalImported(0), 5000)
+    }
+  }
+
+  const handleGoPremium = () => {
+    setOpen(false)
+    navigate('/tienda')
+  }
+
   useEffect(() => {
-    if (!foxEnabled || briefingDoneRef.current || tasks.length === 0) return
+    if (!foxEnabled || !canUseAI || briefingDoneRef.current || tasks.length === 0) return
     const today = new Date().toISOString().slice(0, 10)
     let last = ''
     try { last = localStorage.getItem('task-lex-briefing-date') ?? '' } catch {}
@@ -452,7 +709,7 @@ export default function FoxPanel() {
         bubbleTimerRef.current = setTimeout(() => setShowBubble(false), 9000)
       })
       .catch(() => {})
-  }, [foxEnabled, tasks, activeTasks, overdueTasks])
+  }, [foxEnabled, canUseAI, tasks, activeTasks, overdueTasks])
 
   const handleVoice = async () => {
     if (listening) return
@@ -466,7 +723,8 @@ export default function FoxPanel() {
   }
 
   const handleConfirm = () => {
-    if (!parsed || !sectionId) return
+    if (!parsed || !sectionId || busyRef.current) return
+    busyRef.current = true
     const task = createTask(sectionId, {
       title: parsed.title,
       description: parsed.description,
@@ -491,6 +749,7 @@ export default function FoxPanel() {
       setParsed(null)
       setCreated(false)
       setError(null)
+      busyRef.current = false
       const { state, dialogue } = getFoxState()
       setFoxContext(state)
       setFoxDialogue(dialogue)
@@ -512,31 +771,129 @@ export default function FoxPanel() {
 
   const selectedSection = sections.find((s) => s.id === sectionId)
   const breakdownTarget = tasks.find((t) => t.id === breakdownTargetId)
+  const mascotName = pet === 'quackington' ? getQuackingtonSkinById(quackingtonSkin)?.name ?? 'Sir Quackington' : 'Fox'
+  useEffect(() => setFloatingPetPosition(petPosition), [petPosition])
+
+  const beginPetMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (petAnchored || (event.target as HTMLElement).closest('[data-pet-control]')) return
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    const rect = floatingPetRef.current?.getBoundingClientRect()
+    if (!rect) return
+    petDragRef.current = { id: event.pointerId, startX: event.clientX, startY: event.clientY, x: rect.left, y: rect.top, currentX: rect.left, currentY: rect.top, moved: false }
+    event.currentTarget.setPointerCapture(event.pointerId)
+    event.preventDefault()
+  }
+
+  const movePet = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = petDragRef.current
+    if (!drag || drag.id !== event.pointerId || petAnchored) return
+    const dx = event.clientX - drag.startX
+    const dy = event.clientY - drag.startY
+    if (!drag.moved && Math.hypot(dx, dy) < 5) return
+    drag.moved = true
+    const rect = floatingPetRef.current?.getBoundingClientRect()
+    const width = rect?.width ?? 96
+    const height = rect?.height ?? 116
+    drag.currentX = Math.max(4, Math.min(window.innerWidth - width - 4, drag.x + dx))
+    drag.currentY = Math.max(4, Math.min(window.innerHeight - height - 4, drag.y + dy))
+    setFloatingPetPosition({ x: drag.currentX, y: drag.currentY })
+    event.preventDefault()
+  }
+
+  const endPetMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = petDragRef.current
+    if (!drag || drag.id !== event.pointerId) return
+    petDragRef.current = null
+    if (drag.moved) {
+      const position = { x: drag.currentX, y: drag.currentY }
+      setFloatingPetPosition(position)
+      setPetPosition(position)
+      suppressPetClickRef.current = true
+      window.setTimeout(() => { suppressPetClickRef.current = false }, 0)
+    }
+  }
+
+  const togglePetAnchor = () => {
+    if (petAnchored) {
+      const rect = floatingPetRef.current?.getBoundingClientRect()
+      const position = floatingPetPosition ?? (rect ? { x: rect.left, y: rect.top } : null)
+      if (position) {
+        setFloatingPetPosition(position)
+        setPetPosition(position)
+      }
+      setPetAnchored(false)
+    } else {
+      setPetPosition(floatingPetPosition)
+      setPetAnchored(true)
+    }
+  }
 
   if (!foxEnabled) return null
 
   return (
     <>
-      <div className="fixed bottom-20 right-2 z-50 md:bottom-6 md:right-4">
+      <div
+        ref={floatingPetRef}
+        className={`fixed z-50 ${petAnchored ? '' : 'cursor-grab active:cursor-grabbing'}`}
+        style={floatingPetPosition
+          ? { left: floatingPetPosition.x, top: floatingPetPosition.y, touchAction: petAnchored ? 'auto' : 'none' }
+        : { right: '0.5rem', top: '6rem', touchAction: petAnchored ? 'auto' : 'none' }}
+        onPointerDown={beginPetMove}
+        onPointerMove={movePet}
+        onPointerUp={endPetMove}
+        onPointerCancel={endPetMove}
+        onClickCapture={(event) => { if (suppressPetClickRef.current) { event.preventDefault(); event.stopPropagation() } }}
+      >
         <div className="relative">
-          {showBubble && foxDialogue && !open && (
-            <div className="absolute -top-[72px] -left-2 z-10" style={{ overflow: 'visible' }}>
-              <FoxBubble dialogue={foxDialogue} direction="down" />
+          {showBubble && foxDialogue && !open && pet === 'fox' && petQuotes && (
+            <FoxBubble dialogue={foxDialogue} direction="down" align="right" />
+          )}
+          {pet === 'quackington' ? (
+            <div className="relative">
+              <div className="flex flex-col items-center gap-2">
+                <QuackingtonSkinPet
+                  skinId={quackingtonSkin}
+                  size={72}
+                  className={quackingtonSkin === 'animado' ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}
+                  busy={loading || created}
+                  movable={false}
+                />
+                <button
+                  data-pet-control
+                  onClick={() => setOpen(true)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg)] text-[var(--accent)] shadow-md transition-transform hover:scale-110 active:scale-95"
+                  aria-label="Quacker - Asistente"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
+          ) : (
+            <button
+              onClick={() => setOpen(true)}
+              className="block transition-transform hover:scale-110 active:scale-95"
+              aria-label="Fox - Asistente"
+            >
+              {foxContext && (
+                <img
+                  src={skinImage ?? foxContext.image}
+                  alt={foxContext.label}
+                  className="h-20 w-20 drop-shadow-lg md:h-16 md:w-16"
+                  style={{ objectFit: 'contain' }}
+                />
+              )}
+            </button>
           )}
           <button
-            onClick={() => setOpen(true)}
-            className="block transition-transform hover:scale-110 active:scale-95"
-            aria-label="Fox - Asistente"
+            type="button"
+            data-pet-control
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={togglePetAnchor}
+            title={petAnchored ? 'Desanclar mascota para moverla' : 'Fijar mascota en este lugar'}
+            aria-label={petAnchored ? 'Desanclar mascota' : 'Anclar mascota'}
+            className="absolute -left-1 -top-1 grid h-7 w-7 place-items-center rounded-full border border-[var(--border)] bg-[var(--bg)]/95 text-[var(--text-muted)] shadow-md transition hover:text-[var(--accent)]"
           >
-            {foxContext && (
-              <img
-                src={skinImage ?? foxContext.image}
-                alt={foxContext.label}
-                className="h-20 w-20 drop-shadow-lg md:h-16 md:w-16"
-                style={{ objectFit: 'contain' }}
-              />
-            )}
+            {petAnchored ? <Pin className="h-3.5 w-3.5" /> : <PinOff className="h-3.5 w-3.5 text-[var(--accent)]" />}
           </button>
         </div>
       </div>
@@ -549,38 +906,274 @@ export default function FoxPanel() {
           >
             {foxContext && (
               <div className="absolute -top-20 left-1/2 z-20 -translate-x-1/2" style={{ overflow: 'visible' }}>
-                {showBubble && foxDialogue && (
-                  <div className="absolute -top-14 left-1/2 z-30 -translate-x-1/2" style={{ overflow: 'visible' }}>
-                    <FoxBubble dialogue={foxDialogue} direction="down" />
-                  </div>
-                )}
-                <img
-                  src={skinImage ?? foxContext.image}
-                  alt={foxContext.label}
-                  className="h-24 w-24 drop-shadow-xl md:h-20 md:w-20"
-                  style={{ objectFit: 'contain' }}
-                />
+                <div className="relative">
+                  {showBubble && foxDialogue && petQuotes && (pet === 'quackington'
+                    ? <DuckBubble tick={foxDialogue} skinId={quackingtonSkin} direction="up" />
+                    : <FoxBubble dialogue={foxDialogue} direction="up" />)}
+                  {pet === 'quackington' ? (
+                    <QuackingtonSkinPet skinId={quackingtonSkin} size={96} className="drop-shadow-xl md:h-20 md:w-20" effects={false} idleQuotes={false} />
+                  ) : (
+                    <img
+                      src={skinImage ?? foxContext.image}
+                      alt={foxContext.label}
+                      className="h-24 w-24 drop-shadow-xl md:h-20 md:w-20"
+                      style={{ objectFit: 'contain' }}
+                    />
+                  )}
+                </div>
               </div>
             )}
 
-            {created ? (
-              <div className="flex flex-col items-center gap-3 pt-28 pb-8">
-                {foxContext && (
-                  <img
-                    src={skinImage ?? foxContext.image}
-                    alt={foxContext.label}
-                    className="h-20 w-20"
-                    style={{ objectFit: 'contain' }}
-                  />
+            {!canUseAI ? (
+              <>
+                <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3 pt-24">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold">{mascotName}</span>
+                    <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] font-bold text-[var(--text-muted)]">Modo básico</span>
+                  </div>
+                  <button
+                    onClick={() => setOpen(false)}
+                    className="rounded-lg p-1 text-[var(--text-muted)] hover:bg-[var(--surface)]"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {freeTab === 'paywall' ? (
+                  <div className="max-h-[55vh] overflow-y-auto p-5">
+                    <div className="flex flex-col items-center text-center">
+                      {pet === 'quackington' ? (
+                        <QuackingtonSkinPet skinId={quackingtonSkin} size={112} className="drop-shadow-xl" effects={false} idleQuotes={false} />
+                      ) : (
+                        <img src={skinImage} alt="Fox" className="h-28 w-28 drop-shadow-xl" style={{ objectFit: 'contain' }} />
+                      )}
+                      <div className="mt-3 flex items-center gap-1.5 rounded-full bg-[var(--accent)]/15 px-3 py-1">
+                        <Crown className="h-3.5 w-3.5 text-[var(--accent)]" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">Quacker Premium</span>
+                      </div>
+                      <h3 className="mt-3 text-base font-extrabold leading-snug text-[var(--text)]">Tu asistente puede ayudarte en toda la app</h3>
+                      <p className="mt-1.5 max-w-[280px] text-xs leading-relaxed text-[var(--text-muted)]">
+                        {mascotName} consulta tus datos y propone cambios. Tú decides si aplicarlos. Premium también desbloquea a Quackington.
+                      </p>
+                      <div className="mt-4 w-full space-y-2 text-left">
+                        {[
+                          'Crea tareas con voz o texto: "Recuerda comprar harina mañana"',
+                          'Crea y edita notas normales y bloques de tu semana',
+                          'Actualiza tareas, prioridades y fechas; confirma antes de aplicar',
+                          'Organiza tu día, desglosa tareas y recibe sugerencias según tu energía',
+                          'Cambia la mascota activa y equipa skins que ya desbloqueaste',
+                        ].map((f) => (
+                          <div key={f} className="flex items-start gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-2.5">
+                            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--accent)]" />
+                            <p className="text-[11px] leading-snug text-[var(--text)]">{f}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        onClick={handleGoPremium}
+                        className="mt-4 w-full rounded-xl py-3 text-sm font-extrabold uppercase tracking-wide text-[var(--bg)] shadow-lg transition-transform hover:brightness-105 active:scale-[0.98]"
+                        style={{ background: 'linear-gradient(135deg, var(--gradient-from), var(--gradient-to))' }}
+                      >
+                        Quiero mi asistente
+                      </button>
+                      <button
+                        onClick={() => setFreeTab('basico')}
+                        className="mt-2 text-[11px] font-semibold text-[var(--text-muted)] underline underline-offset-2 hover:text-[var(--text)]"
+                      >
+                        Primero, prueba el modo básico gratis
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="max-h-[55vh] space-y-3 overflow-y-auto p-4">
+                    <button
+                      onClick={() => setFreeTab('paywall')}
+                      className="flex w-full items-center justify-between rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/5 px-3 py-2.5"
+                    >
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-[var(--accent)]">
+                        <Sparkles className="h-3.5 w-3.5" /> Desbloquea el asistente completo
+                      </span>
+                      <ArrowRight className="h-3.5 w-3.5 text-[var(--accent)]" />
+                    </button>
+
+                    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
+                      <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Resumen del día</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-lg bg-[var(--bg)] p-2.5 text-center">
+                          <ListTodo className="mx-auto h-4 w-4 text-[var(--accent)]" />
+                          <p className="mt-1 text-lg font-extrabold text-[var(--text)]">{pendientesHoy}</p>
+                          <p className="text-[10px] text-[var(--text-muted)]">para hoy</p>
+                        </div>
+                        <div className="rounded-lg bg-[var(--bg)] p-2.5 text-center">
+                          <RefreshCw className="mx-auto h-4 w-4 text-red-500" />
+                          <p className="mt-1 text-lg font-extrabold text-[var(--text)]">{overdueTasks.length}</p>
+                          <p className="text-[10px] text-[var(--text-muted)]">vencidas</p>
+                        </div>
+                        <div className="rounded-lg bg-[var(--bg)] p-2.5 text-center">
+                          <Check className="mx-auto h-4 w-4 text-[var(--accent)]" />
+                          <p className="mt-1 text-lg font-extrabold text-[var(--text)]">{coachStats.completadasHoy}</p>
+                          <p className="text-[10px] text-[var(--text-muted)]">hechas hoy</p>
+                        </div>
+                        <div className="rounded-lg bg-[var(--bg)] p-2.5 text-center">
+                          <Flame className="mx-auto h-4 w-4 text-orange-500" />
+                          <p className="mt-1 text-lg font-extrabold text-[var(--text)]">{coachStats.streakDays}</p>
+                          <p className="text-[10px] text-[var(--text-muted)]">días de racha</p>
+                        </div>
+                      </div>
+                      {proximaTarea && (
+                        <button
+                          onClick={() => { setOpen(false); navigate(`/s/${proximaTarea.sectionId}`) }}
+                          className="mt-2 flex w-full items-center gap-2 rounded-lg bg-[var(--bg)] px-3 py-2 text-left hover:bg-[var(--surface-2)]"
+                        >
+                          <CalendarClock className="h-4 w-4 shrink-0 text-[var(--accent)]" />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-xs font-semibold text-[var(--text)]">{proximaTarea.title}</span>
+                            <span className="block text-[10px] text-[var(--text-muted)]">Próxima por vencer · {format(proximaTarea.dueDate!, 'd MMM', { locale: es })}</span>
+                          </span>
+                          <ArrowRight className="h-3.5 w-3.5 shrink-0 text-[var(--text-muted)]" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Reagendar vencidas</p>
+                        {rescheduleLocalApplied && (
+                          <span className="flex items-center gap-1 rounded-full bg-[var(--accent)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
+                            <Check className="h-3 w-3" /> Movidas
+                          </span>
+                        )}
+                      </div>
+                      {overdueTasks.length === 0 ? (
+                        <p className="mt-1.5 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+                          <Check className="h-3.5 w-3.5 text-[var(--accent)]" /> Todo al día, sin vencidas
+                        </p>
+                      ) : (
+                        <>
+                          <p className="mt-1 text-xs leading-snug text-[var(--text-muted)]">
+                            Tienes {overdueTasks.length} tarea{overdueTasks.length === 1 ? '' : 's'} vencida{overdueTasks.length === 1 ? '' : 's'}. Muévelas a hoy con un toque, sin IA.
+                          </p>
+                          <button
+                            onClick={applyLocalReschedule}
+                            className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--accent)] py-2 text-xs font-bold text-[var(--bg)] hover:opacity-90"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" /> Mover todas a hoy
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
+                      <div className="flex items-center gap-2">
+                        <CalendarPlus className="h-4 w-4 text-[var(--accent)]" />
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Importar del calendario</p>
+                      </div>
+                      {calImported > 0 && (
+                        <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-[var(--accent)]/10 px-3 py-2 text-[11px] font-bold text-[var(--accent)]">
+                          <Check className="h-3.5 w-3.5" /> {calImported} evento{calImported === 1 ? '' : 's'} creado{calImported === 1 ? '' : 's'} como tarea
+                        </p>
+                      )}
+                      {calLoading ? (
+                        <p className="mt-2 flex items-center justify-center gap-2 text-xs text-[var(--text-muted)]">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Leyendo tu calendario...
+                        </p>
+                      ) : calEvents === null ? (
+                        <>
+                          <p className="mt-1 text-[11px] leading-snug text-[var(--text-muted)]">
+                            Trae los eventos de hoy de tu calendario del celular y conviértelos en tareas.
+                          </p>
+                          <button
+                            onClick={handleFetchCalendar}
+                            className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] py-2 text-xs font-semibold text-[var(--text)] hover:bg-[var(--surface-2)]"
+                          >
+                            <CalendarPlus className="h-3.5 w-3.5" /> Buscar eventos de hoy
+                          </button>
+                        </>
+                      ) : calUnavailable ? (
+                        <>
+                          <p className="mt-1 text-xs leading-snug text-[var(--text-muted)]">
+                            Solo disponible en la app Android: otorga permiso de calendario y vuelve a intentarlo.
+                          </p>
+                          <button
+                            onClick={handleFetchCalendar}
+                            className="mt-2 text-[11px] font-semibold text-[var(--accent)] underline underline-offset-2"
+                          >
+                            Reintentar
+                          </button>
+                        </>
+                      ) : calEvents.length === 0 ? (
+                        <>
+                          <p className="mt-1 text-xs text-[var(--text-muted)]">No hay eventos para hoy en tu calendario.</p>
+                          <button
+                            onClick={handleFetchCalendar}
+                            className="mt-2 text-[11px] font-semibold text-[var(--accent)] underline underline-offset-2"
+                          >
+                            Buscar de nuevo
+                          </button>
+                        </>
+                      ) : (
+                        <div className="mt-2 space-y-2">
+                          {calEvents.map((e) => (
+                            <label key={e.id} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2">
+                              <input
+                                type="checkbox"
+                                checked={!!calSelected[e.id]}
+                                onChange={() => toggleCalEvent(e.id)}
+                                className="h-3.5 w-3.5 accent-[var(--accent)]"
+                              />
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-xs font-semibold text-[var(--text)]">{e.title || 'Sin título'}</span>
+                                <span className="block text-[10px] text-[var(--text-muted)]">{format(new Date(e.startDate), "d 'de' MMM · HH:mm", { locale: es })}</span>
+                              </span>
+                            </label>
+                          ))}
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={sectionId}
+                              onChange={(e) => setSectionId(e.target.value)}
+                              className="min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2.5 py-2 text-xs text-[var(--text)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                            >
+                              {sections.map((s) => (
+                                <option key={s.id} value={s.id}>{s.label}</option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={handleImportEvents}
+                              className="shrink-0 rounded-lg bg-[var(--accent)] px-3 py-2 text-xs font-bold text-[var(--bg)] hover:opacity-90"
+                            >
+                              Crear {calEvents.filter((e) => calSelected[e.id]).length}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
-                {foxDialogue && <FoxBubble dialogue={foxDialogue} />}
-                <p className="text-sm font-semibold">Fox creó tu tarea</p>
+              </>
+            ) : created ? (
+              <div className="flex flex-col items-center gap-3 pt-28 pb-8">
+                <div className="relative">
+                  {pet === 'quackington' ? (
+                    <QuackingtonSkinPet skinId={quackingtonSkin} size={80} effects={false} idleQuotes={false} />
+                  ) : foxContext && (
+                    <img
+                      src={skinImage ?? foxContext.image}
+                      alt={foxContext.label}
+                      className="h-20 w-20"
+                      style={{ objectFit: 'contain' }}
+                    />
+                  )}
+                  {foxDialogue && petQuotes && (pet === 'quackington'
+                    ? <DuckBubble tick={foxDialogue} skinId={quackingtonSkin} />
+                    : <FoxBubble dialogue={foxDialogue} />)}
+                </div>
+                <p className="text-sm font-semibold">{mascotName} creó tu tarea</p>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3 pt-24">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold">Fox</span>
+                    <span className="text-sm font-semibold">{mascotName}</span>
                     <span className="text-[11px] text-[var(--text-muted)]">tu asistente</span>
                   </div>
                   <button
@@ -667,7 +1260,7 @@ export default function FoxPanel() {
                           className="flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-1.5 text-xs font-semibold text-[var(--bg)] hover:opacity-90 disabled:opacity-50"
                         >
                           {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                          {loading ? 'Fox pensando...' : mode === 'crear' ? 'Analizar' : 'Preguntar'}
+                          {loading ? `${mascotName} pensando...` : mode === 'crear' ? 'Analizar' : 'Preguntar'}
                         </button>
                       </div>
 
@@ -678,7 +1271,7 @@ export default function FoxPanel() {
                   {mode === 'crear' && parsed && (
                     <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
                       <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                        Fox encontró esto
+                        {mascotName} encontró esto
                       </p>
                       <div className="space-y-2">
                         <div>
@@ -731,7 +1324,7 @@ export default function FoxPanel() {
 
                   {mode === 'preguntar' && answer && (
                     <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
-                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Fox responde</p>
+                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">{mascotName} responde</p>
                       <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--text)]">{answer}</p>
                     </div>
                   )}
@@ -845,7 +1438,7 @@ export default function FoxPanel() {
                       </div>
                       {loading && (
                         <p className="flex items-center justify-center gap-2 text-xs text-[var(--text-muted)]">
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Fox está eligiendo...
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" /> {mascotName} está eligiendo...
                         </p>
                       )}
                       {error && <p className="text-center text-xs text-red-500">{error}</p>}
@@ -855,7 +1448,7 @@ export default function FoxPanel() {
                             const suggested = tasks.find((t) => t.id === energyResult.taskId)
                             return suggested ? (
                               <>
-                                <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Fox sugiere</p>
+                                <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">{mascotName} sugiere</p>
                                 <p className="mt-1 text-sm font-bold text-[var(--text)]">{suggested.title}</p>
                                 <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">{energyResult.message}</p>
                                 <button onClick={goSuggestedTask} className="mx-auto mt-3 flex items-center gap-1 rounded-full bg-[var(--accent)] px-4 py-1.5 text-xs font-bold text-[var(--bg)] hover:opacity-90">
@@ -902,7 +1495,7 @@ export default function FoxPanel() {
                       <div className="flex max-h-[38vh] min-h-[120px] flex-col gap-2 overflow-y-auto">
                         {chatMessages.length === 0 && (
                           <p className="py-4 text-center text-xs leading-relaxed text-[var(--text-muted)]">
-                            Habla con Fox de lo que quieras: tus tareas, ideas o cómo va tu día
+                            Habla con {mascotName} de lo que quieras: tus tareas, ideas o cómo va tu día
                           </p>
                         )}
                         {chatMessages.map((m, i) => (
@@ -914,6 +1507,19 @@ export default function FoxPanel() {
                             {m.text}
                           </div>
                         ))}
+                        {pendingActions.length > 0 && (
+                          <div className="self-start w-full rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/5 p-3">
+                            <p className="flex items-center gap-1.5 text-xs font-bold text-[var(--text)]"><Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" /> Propuesta para Quacker</p>
+                            <ul className="mt-2 space-y-1.5">
+                              {pendingActions.map((action, index) => <li key={`${action.type}-${index}`} className="text-[11px] leading-snug text-[var(--text-muted)]">• {action.summary}</li>)}
+                            </ul>
+                            <div className="mt-3 flex gap-2">
+                              <button onClick={applyChatActions} className="flex-1 rounded-lg bg-[var(--accent)] px-3 py-2 text-[11px] font-bold text-[var(--bg)]">Aplicar cambios</button>
+                              <button onClick={() => setPendingActions([])} className="rounded-lg border border-[var(--border)] px-3 py-2 text-[11px] font-semibold text-[var(--text-muted)]">Cancelar</button>
+                            </div>
+                          </div>
+                        )}
+                        {actionNotice && <p className="self-start text-[11px] text-[var(--text-muted)]">{actionNotice}</p>}
                         {loading && mode === 'chat' && (
                           <div className="self-start rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
                             <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--text-muted)]" />
@@ -954,12 +1560,12 @@ export default function FoxPanel() {
                         <div className="flex flex-col items-center gap-2 py-6 text-center">
                           <Check className="h-8 w-8 text-[var(--accent)]" />
                           <p className="text-sm font-semibold text-[var(--text)]">No tienes tareas vencidas</p>
-                          <p className="text-xs text-[var(--text-muted)]">¡Todo al día! Fox no tiene nada que reagendar</p>
+                          <p className="text-xs text-[var(--text-muted)]">¡Todo al día! {mascotName} no tiene nada que reagendar</p>
                         </div>
                       ) : (
                         <>
                           <p className="text-center text-xs text-[var(--text-muted)]">
-                            Tienes {overdueTasks.length} tarea{overdueTasks.length === 1 ? '' : 's'} vencida{overdueTasks.length === 1 ? '' : 's'}. Fox te ayuda a reorganizarla{overdueTasks.length === 1 ? '' : 's'}.
+                            Tienes {overdueTasks.length} tarea{overdueTasks.length === 1 ? '' : 's'} vencida{overdueTasks.length === 1 ? '' : 's'}. {mascotName} te ayuda a reorganizarla{overdueTasks.length === 1 ? '' : 's'}.
                           </p>
                           {!rescheduleApplied && (
                             <button

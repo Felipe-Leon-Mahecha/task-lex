@@ -19,28 +19,29 @@ export default function SectionShell({
     '--text-muted': theme.textMuted,
     '--border': theme.border,
     '--radius': `${theme.borderRadius}px`,
-    ...(theme.backgroundImage
-      ? {
-          backgroundImage: `linear-gradient(${hexToRgba(theme.background, 0.58)}, ${hexToRgba(
-            theme.background,
-            0.58,
-          )}), url("${theme.backgroundImage}")`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }
-      : {}),
   } as CSSProperties
+
+  const backgroundStyle: CSSProperties | undefined = theme.backgroundImage
+    ? {
+        backgroundImage: `linear-gradient(${hexToRgba(theme.background, 0.58)}, ${hexToRgba(
+          theme.background,
+          0.58,
+        )}), url("${theme.backgroundImage}")`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }
+    : undefined
 
   return (
     <div
       style={vars}
       data-section={sectionId}
-      className="flex h-full flex-col overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg)] text-[var(--text)]"
+      className="section-canvas relative isolate -mx-4 -my-4 flex min-h-[calc(100dvh-4rem)] flex-col bg-[var(--bg)] text-[var(--text)] md:-mx-8 md:-my-8"
     >
-      {/* Todo el contenido (header, tabs, filtros, vista) vive dentro de este único scroll interno.
-          Ya no depende de un max-height calculado a mano en ListView: el contenedor mismo
-          reparte el espacio y cualquier exceso se scrollea aquí, sin desbordar el cuadro. */}
-      <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">{children}</div>
+      {/* El fondo de sección ocupa todo el lienzo; las vistas se dibujan encima sin una tarjeta envolvente. */}
+      {backgroundStyle && <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={backgroundStyle} />}
+      <div className="relative z-10 min-h-0 flex-1 overflow-y-auto p-4 md:p-6">{children}</div>
     </div>
   )
 }

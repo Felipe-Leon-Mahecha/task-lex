@@ -12,8 +12,9 @@ import {
   type Review,
 } from '../lib/reviews'
 import Modal from '../components/ui/Modal'
+import { QUACKINGTON_IMAGE } from '../lib/quackington'
 
-const WA = 'https://wa.me/573104885609?text=¡Hola!%20Tengo%20una%20sugerencia%20o%20un%20problema%20con%20Flux.'
+const WA = 'https://wa.me/573104885609?text=¡Hola!%20Tengo%20una%20sugerencia%20o%20un%20problema%20con%20Quacker.'
 
 const fmtDate = (iso: string) =>
   new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(iso))
@@ -36,13 +37,15 @@ function Stars({ value, size = 'h-4 w-4' }: { value: number; size?: string }) {
 function StarPicker({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   const [hover, setHover] = useState(0)
   return (
-    <div className="flex gap-1">
+    <div role="group" aria-label="Calificación de 1 a 5 estrellas" className="flex gap-1">
       {[1, 2, 3, 4, 5].map((n) => {
         const active = n <= (hover || value)
         return (
           <button
             key={n}
             type="button"
+            aria-label={`${n} ${n === 1 ? 'estrella' : 'estrellas'}`}
+            aria-pressed={value === n}
             onMouseEnter={() => setHover(n)}
             onMouseLeave={() => setHover(0)}
             onClick={() => onChange(n)}
@@ -69,6 +72,7 @@ export default function Opiniones() {
   const [inbox, setInbox] = useState<Review[]>([])
   const [myReview, setMyReview] = useState<Review | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const [name, setName] = useState('')
   const [rating, setRating] = useState(0)
@@ -76,28 +80,36 @@ export default function Opiniones() {
   const [makePublic, setMakePublic] = useState(true)
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [inboxBusy, setInboxBusy] = useState<string | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [reviewToDelete, setReviewToDelete] = useState<Review | null>(null)
 
   const load = useCallback(async () => {
-    const [ap, mine, all] = await Promise.all([
-      getApprovedReviews(),
-      uid ? getMyReview(uid) : Promise.resolve(null),
-      isAdmin ? getAllReviews() : Promise.resolve([]),
-    ])
-    setApproved(ap)
-    setInbox(all)
-    setMyReview(mine)
-    if (mine) {
-      setName(mine.name)
-      setRating(mine.rating)
-      setComment(mine.comment)
-      setMakePublic(mine.public)
-    } else if (user?.displayName) {
-      setName(user.displayName)
+    setLoadError(null)
+    try {
+      const [ap, mine, all] = await Promise.all([
+        getApprovedReviews(),
+        uid ? getMyReview(uid) : Promise.resolve(null),
+        isAdmin ? getAllReviews() : Promise.resolve([]),
+      ])
+      setApproved(ap)
+      setInbox(all)
+      setMyReview(mine)
+      if (mine) {
+        setName(mine.name)
+        setRating(mine.rating)
+        setComment(mine.comment)
+        setMakePublic(mine.public)
+      } else if (user?.displayName) {
+        setName(user.displayName)
+      }
+    } catch (error) {
+      console.error('No se pudieron cargar las opiniones:', error)
+      setLoadError('No se pudieron cargar las reseñas. Revisa tu conexión e inténtalo de nuevo.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [uid, isAdmin, user?.displayName])
 
   useEffect(() => {
@@ -110,10 +122,20 @@ export default function Opiniones() {
     e.preventDefault()
     if (!uid || busy || rating < 1) return
     setBusy(true)
-    await submitReview(uid, { name, rating, comment, public: makePublic })
-    setBusy(false)
-    setSent(true)
-    await load()
+    setSubmitError(null)
+    setSent(false)
+    try {
+      const freshIdToken = await user?.getIdToken(true)
+      if (!freshIdToken) throw new Error('Tu sesión expiró. Cierra sesión, vuelve a entrar e inténtalo otra vez.')
+      await submitReview(uid, { name, rating, comment, public: makePublic }, freshIdToken)
+      setSent(true)
+      await load()
+    } catch (error) {
+      console.error('No se pudo enviar la reseña:', error)
+      setSubmitError(error instanceof Error ? error.message : 'No se pudo enviar tu reseña. Comprueba tu conexión e inténtalo de nuevo.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   const adminSetStatus = async (reviewUid: string, status: Review['status']) => {
@@ -146,23 +168,20 @@ export default function Opiniones() {
         <h1 className="text-2xl font-bold tracking-tight">Qué te pareció {APP_NAME}</h1>
       </div>
 
-      <div className="card p-5">
-        <div className="flex items-center gap-5">
-          <div className="text-center">
-            <p className="text-4xl font-bold tracking-tight">{approved.length ? avg.toFixed(1) : '—'}</p>
-            <Stars value={avg} size="h-5 w-5" />
-            <p className="mt-1 text-xs text-[var(--text-muted)]">
-              {approved.length} {approved.length === 1 ? 'reseña' : 'reseñas'}
-            </p>
+      {loadError && <div role="alert" className="rounded-xl border border-red-400/30 bg-red-400/10 p-3 text-sm text-red-300">{loadError} <button onClick={() => { setLoading(true); load() }} className="ml-2 font-bold underline">Reintentar</button></div>}
+
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--accent)]/25 bg-gradient-to-br from-[var(--accent)]/12 via-[var(--surface)] to-[var(--surface)] p-4 sm:p-5">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-[var(--accent)]/10 blur-2xl" />
+        <div className="relative flex items-center gap-4">
+          <img src={QUACKINGTON_IMAGE} alt="Sir Quackington" className="h-20 w-20 shrink-0 object-contain drop-shadow-lg sm:h-24 sm:w-24" />
+          <div className="min-w-0 flex-1 text-sm text-[var(--text-muted)]">
+            <p className="font-semibold text-[var(--text)]">Tu experiencia ayuda a mejorar {APP_NAME}</p>
+            <p className="mt-1 text-xs leading-relaxed">Cuéntanos qué te funciona y qué podemos hacer mejor. Las reseñas públicas se revisan antes de mostrarse.</p>
           </div>
-          <div className="min-w-0 text-sm text-[var(--text-muted)]">
-            <p>
-              Cada tarea cuenta: tu opinión ayuda a que {APP_NAME} mejore de verdad.
-            </p>
-            <p className="mt-1">
-              Las reseñas pasan por una revisión antes de publicarse, así que lo que ves aquí es lo mejor de la
-              comunidad.
-            </p>
+          <div className="hidden shrink-0 text-center sm:block">
+            <p className="text-3xl font-extrabold tracking-tight text-[var(--text)]">{approved.length ? avg.toFixed(1) : '—'}</p>
+            <Stars value={avg} />
+            <p className="mt-1 text-[10px] text-[var(--text-muted)]">{approved.length} {approved.length === 1 ? 'reseña' : 'reseñas'}</p>
           </div>
         </div>
       </div>
@@ -180,6 +199,7 @@ export default function Opiniones() {
                   ¡Gracias! Tu opinión pasará por revisión y aparecerá pronto en la lista.
                 </p>
               )}
+              {submitError && <p role="alert" className="rounded-lg bg-red-400/10 p-3 text-xs text-red-300">{submitError}</p>}
               <div>
                 <label className="text-xs text-[var(--text-muted)]">Tu nombre</label>
                 <input

@@ -3,12 +3,12 @@ import { CapacitorCalendar } from '@ebarooni/capacitor-calendar'
 
 export async function requestCalendarPermissions() {
   if (Capacitor.getPlatform() === 'web') return false
-  
   try {
-    const result = await CapacitorCalendar.requestAllPermissions()
-    // Check if all permissions are granted (they return 'granted' string)
-    const allGranted = Object.values(result.result).every(p => p === 'granted')
-    return allGranted
+    // This app writes task events. Requesting every calendar *and reminders*
+    // permission included scopes that are unsupported on Android and kept the
+    // old all-values check false even after calendar access was granted.
+    const result = await CapacitorCalendar.requestFullCalendarAccess()
+    return result.result === 'granted'
   } catch (error) {
     console.error('Error requesting calendar permissions:', error)
     return false
@@ -91,6 +91,19 @@ export async function deleteCalendarEvent(eventId: string) {
   } catch (error) {
     console.error('Error deleting calendar event:', error)
     return false
+  }
+}
+
+export async function fetchCalendarEvents(from: Date, to: Date) {
+  if (Capacitor.getPlatform() === 'web') return null
+  const hasPermission = await requestCalendarPermissions()
+  if (!hasPermission) return null
+  try {
+    const result = await CapacitorCalendar.listEventsInRange({ from: from.getTime(), to: to.getTime() })
+    return result.result ?? []
+  } catch (error) {
+    console.error('Error fetching calendar events:', error)
+    return null
   }
 }
 

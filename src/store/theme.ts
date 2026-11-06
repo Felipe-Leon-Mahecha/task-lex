@@ -28,7 +28,7 @@ export const useThemeStore = create<ThemeState>()(
       themes: { trabajo: defaultTheme, universidad: defaultTheme, diario: defaultTheme },
       setTheme: (id, patch) => {
         const base = get().themes[id] ?? defaultTheme
-        const next = { ...base, ...patch }
+        const next = { ...base, ...patch, updatedAt: Date.now() }
         set((s) => ({ themes: { ...s.themes, [id]: next } }))
         const uid = getUid()
         if (uid) setSectionTheme(uid, id, next).catch(() => {})

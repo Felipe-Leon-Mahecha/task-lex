@@ -12,6 +12,7 @@ export default defineConfig({
       manifest: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        globIgnores: ['**/quarkington/**'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
     }),
@@ -20,7 +21,14 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('firebase')) return 'firebase'
+          const normalizedId = id.replaceAll('\\', '/')
+          const isFirebase = normalizedId.includes('/node_modules/firebase/') || normalizedId.includes('/node_modules/@firebase/')
+          if (isFirebase) {
+            if (/(?:@firebase|firebase)\/(?:firestore)(?:\/|$)/.test(normalizedId)) return 'firebase-firestore'
+            if (/(?:@firebase|firebase)\/(?:auth)(?:\/|$)/.test(normalizedId)) return 'firebase-auth'
+            if (/(?:@firebase|firebase)\/(?:app|component|logger|util|installations|webchannel-wrapper)(?:\/|$)/.test(normalizedId)) return 'firebase-core'
+            return 'firebase-support'
+          }
           if (id.includes('node_modules/react') || id.includes('react-router')) return 'react'
         },
       },

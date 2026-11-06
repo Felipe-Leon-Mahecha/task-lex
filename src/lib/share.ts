@@ -4,7 +4,7 @@ export async function shareTask(title: string, description: string) {
   try {
     const text = description ? `${title}\n\n${description}` : title
     await Share.share({
-      title: 'Flux - Tarea',
+      title: 'Quacker - Tarea',
       text: text,
       dialogTitle: 'Compartir tarea',
     })

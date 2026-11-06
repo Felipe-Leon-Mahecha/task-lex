@@ -21,11 +21,11 @@ export function sectionDoc(uid: string, sectionId: string) {
 }
 
 export function settingsDoc(uid: string) {
-  return doc(collection(db!, 'users', uid), 'settings')
+  return doc(collection(db!, 'users', uid, 'settings'), 'settings')
 }
 
 export function focusDoc(uid: string) {
-  return doc(collection(db!, 'users', uid), 'focus')
+  return doc(collection(db!, 'users', uid, 'focus'), 'focus')
 }
 
 export async function saveSettings(uid: string, settings: Record<string, unknown>) {
