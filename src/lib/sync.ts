@@ -16,6 +16,14 @@ import type { NoteFolder, StoredNote } from '../types/notes'
 import type { SectionMeta, Task, ThemeConfig } from '../types/task'
 
 let unsubs: (() => void)[] = []
+const backupReadyStreams = new Map<string, Set<string>>()
+
+function markBackupStreamReady(uid: string, stream: string) {
+  const ready = backupReadyStreams.get(uid) ?? new Set<string>()
+  ready.add(stream)
+  backupReadyStreams.set(uid, ready)
+  if (ready.size === 4) window.dispatchEvent(new CustomEvent('tasklex:backup-ready', { detail: { uid } }))
+}
 
 function reviveTask(id: string, data: Record<string, unknown>): Task {
   const d = data as unknown as Record<string, string | null | number | boolean | unknown[]>
@@ -66,7 +74,9 @@ export async function startSync(uid: string) {
   let firstSnapshot = true
   unsubs.push(
     onSnapshot(collection(fdb, 'users', uid, 'tasks'), (snap) => {
-      if (!snap.metadata.fromCache) markCloudSync(uid)
+      if (!snap.metadata.fromCache) {
+        markCloudSync(uid)
+      }
       const remote = snap.docs.map((d) => reviveTask(d.id, d.data() as Record<string, unknown>))
       const local = useTasksStore.getState().tasks
       const localMap = new Map(local.map((t) => [t.id, t]))
@@ -79,6 +89,7 @@ export async function startSync(uid: string) {
         if (!remote.some((r) => r.id === l.id)) merged.push(l)
       })
       useTasksStore.setState({ tasks: merged })
+      if (!snap.metadata.fromCache) markBackupStreamReady(uid, 'tasks')
       if (firstSnapshot) {
         firstSnapshot = false
         rescheduleReminders()
@@ -123,6 +134,7 @@ export async function startSync(uid: string) {
         batch.commit().catch(() => {})
       }
       if (remote.length > 0) useSectionsStore.getState().syncRemote(remote)
+      if (!snap.metadata.fromCache) markBackupStreamReady(uid, 'sections')
     },
     (err) => console.error('[sync sections]', err),
     ),
@@ -132,6 +144,7 @@ export async function startSync(uid: string) {
 export function stopSync() {
   unsubs.forEach((u) => u())
   unsubs = []
+  backupReadyStreams.clear()
 }
 
 function reviveNote(id: string, data: Record<string, unknown>): StoredNote {
@@ -199,6 +212,7 @@ async function syncNotes(uid: string, fdb: Firestore) {
           notes: merged,
           trash: removed ? trash.filter((t) => !tombstones.has(t.id)) : trash,
         })
+        if (!snap.metadata.fromCache) markBackupStreamReady(uid, 'notes')
       },
       (err) => console.error('[sync notes]', err),
     ),
@@ -232,6 +246,7 @@ async function syncNotes(uid: string, fdb: Firestore) {
           folders: merged,
           trashFolders: removed ? trashFolders.filter((t) => !tombstones.has(t.id)) : trashFolders,
         })
+        if (!snap.metadata.fromCache) markBackupStreamReady(uid, 'folders')
       },
       (err) => console.error('[sync folders]', err),
     ),
@@ -325,6 +340,8 @@ async function syncSettingsAndFocus(uid: string) {
         focusMinutes: typeof d.focusMinutes === 'number' ? d.focusMinutes : cur.focusMinutes,
         shortBreak: typeof d.shortBreak === 'number' ? d.shortBreak : cur.shortBreak,
         notificationsOn: typeof d.notificationsOn === 'boolean' ? d.notificationsOn : cur.notificationsOn,
+        autoBackup: typeof d.autoBackup === 'boolean' ? d.autoBackup : cur.autoBackup,
+        backupFrequency: typeof d.backupFrequency === 'number' ? d.backupFrequency : cur.backupFrequency,
       })
       if (typeof d.appThemeId === 'string') useSettingsStore.getState().setAppThemeId(d.appThemeId)
       if (typeof d.accentThemeId === 'string') useSettingsStore.getState().setAccentThemeId(d.accentThemeId)
@@ -335,6 +352,8 @@ async function syncSettingsAndFocus(uid: string) {
         focusMinutes: cur.focusMinutes,
         shortBreak: cur.shortBreak,
         notificationsOn: cur.notificationsOn,
+        autoBackup: cur.autoBackup,
+        backupFrequency: cur.backupFrequency,
       }).catch(() => {})
     }
     const f = await getDoc(focusDoc(uid))

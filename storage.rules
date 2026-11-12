@@ -9,6 +9,14 @@ service firebase.storage {
         && request.resource.size < 8 * 1024 * 1024
         && request.resource.contentType.matches('image/(png|jpeg|webp|gif)');
     }
+    match /users/{userId}/backups/{backupName} {
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.size < 20 * 1024 * 1024
+        && request.resource.contentType == 'application/json'
+        && backupName.matches('backup-.*[.]json');
+    }
     match /{path=**} {
       allow read, write: if false;
     }

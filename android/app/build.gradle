@@ -7,8 +7,8 @@ android {
         applicationId "com.tasklex.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 25
-        versionName "5.2.18"
+        versionCode 26
+        versionName "5.2.19"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -18,10 +18,10 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file('../../flux-release.keystore')
-            storePassword null
+            storeFile file(System.getenv('FLUX_KEYSTORE_FILE') ?: '../../flux-release.keystore')
+            storePassword System.getenv('FLUX_KEYSTORE_PASSWORD') ?: project.findProperty('fluxKeystorePassword')
             keyAlias System.getenv('FLUX_KEY_ALIAS') ?: project.findProperty('fluxKeyAlias') ?: 'flux'
-            keyPassword null
+            keyPassword System.getenv('FLUX_KEY_PASSWORD') ?: project.findProperty('fluxKeyPassword')
         }
     }
     buildTypes {

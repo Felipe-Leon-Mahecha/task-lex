@@ -3,7 +3,6 @@ import { BellRing, Check, Clock3, VolumeX } from 'lucide-react'
 import { alarmToneUrl, cancelReminder, snoozeAlarm, type FiredAlarm } from '../../lib/notifications'
 import { useSettingsStore } from '../../store/settings'
 import { useTasksStore } from '../../store/tasks'
-import { useFoxSkinsStore } from '../../store/foxSkins'
 
 function startWebBeep(onBlocked: () => void): { stop: () => void; unlock: () => void } {
   const noop = () => {}
@@ -145,7 +144,6 @@ export default function AlarmOverlay({ alarm, onClose }: { alarm: FiredAlarm | n
     stopSound()
     try {
       useTasksStore.getState().updateTask(alarm.taskId, { status: 'done', completedAt: new Date() })
-      useFoxSkinsStore.getState().recordTaskReward(alarm.taskId)
       cancelReminder(alarm.taskId)
     } catch {}
     onClose()

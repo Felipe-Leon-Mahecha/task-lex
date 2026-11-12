@@ -89,6 +89,9 @@ async function syncPendingOperations() {
         console.error('Error syncing operation:', operation.id, error)
       }
     }
+    if (!useOfflineStore.getState().pendingOperations.some((operation) => operation.uid === uid)) {
+      window.dispatchEvent(new CustomEvent('tasklex:backup-retry', { detail: { uid } }))
+    }
   } finally {
     syncInProgress = false
   }

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Capacitor } from '@capacitor/core'
 import { Link, useNavigate } from 'react-router-dom'
-import { Bell, BellOff, Calendar, Download, Music, Play, Upload, Trash2, Volume2, VolumeX, Search, Cloud, Database, BellRing } from 'lucide-react'
-import { importJSON, lastBackupAt } from '../lib/backup'
+import { Bell, BellOff, Calendar, Download, Music, Play, Upload, Trash2, Volume2, VolumeX, Search, Cloud, Database, BellRing, CloudUpload, RefreshCw, Users } from 'lucide-react'
+import { createCloudBackup, importJSON, lastBackupAt, listCloudBackups, restoreCloudBackup, type CloudBackup } from '../lib/backup'
 import { exportSeasonsJSON, importSeasonsJSON } from '../lib/seasons/seasonBackup'
 import { useAuthStore } from '../store/auth'
 import { alarmToneUrl, deleteAlarmTone, disableAllReminders, requestPermission, saveAlarmTone } from '../lib/notifications'
@@ -19,8 +19,10 @@ import InviteCard from '../components/ui/InviteCard'
 import AiAssistantCard from '../components/settings/AiAssistantCard'
 import { useOfflineStore } from '../store/offline'
 import { lastCloudSyncAt } from '../lib/syncStatus'
-import { canAccessSeasons } from '../lib/appInfo'
+import { ADMIN_EMAIL, canAccessSeasons } from '../lib/appInfo'
 import { playAppSound } from '../lib/soundEffects'
+import { loadPresenceCounts, type PresenceCounts } from '../lib/presence'
+import { getHolidayPreview, setHolidayPreview, type HolidayPreview } from '../lib/holidayPreview'
 
 const SETTINGS_CATEGORIES = [
   { id: 'help', label: 'Ayuda', words: 'tutorial recorrido guía soporte' },
@@ -29,7 +31,7 @@ const SETTINGS_CATEGORIES = [
   { id: 'calendar-sync', label: 'Calendario', words: 'sincronizar calendario dispositivo google fecha' },
   { id: 'sound', label: 'Sonido', words: 'audio tono música alarma' },
   { id: 'themes', label: 'Temas', words: 'tema colores aspecto interfaz tienda' },
-  { id: 'seasonal', label: 'Ajustes de temporada', words: 'halloween lluvia tormenta arañas decoraciones' },
+  { id: 'seasonal', label: 'Eventos de temporada', words: 'diciembre navidad nochebuena año nuevo halloween lluvia tormenta arañas decoraciones' },
   { id: 'backup', label: 'Copia automática', words: 'backup respaldo copia automática frecuencia json' },
   { id: 'sections', label: 'Apartados', words: 'renombrar eliminar ordenar secciones' },
   { id: 'companion', label: 'Mascota y asistente', words: 'fox quackington mascota asistente mensajes' },
@@ -55,22 +57,80 @@ export default function Settings() {
   const seasonsImportRef = useRef<HTMLInputElement>(null)
   const [settingsQuery, setSettingsQuery] = useState('')
   const isHalloweenMonth = new Date().getMonth() === 9
+  const isOwner = user?.email?.trim().toLowerCase() === ADMIN_EMAIL
   const isOnline = useOfflineStore((s) => s.isOnline)
   const pendingOperations = useOfflineStore((s) => s.pendingOperations.length)
   const [lastSync, setLastSync] = useState<number | null>(() => lastCloudSyncAt(user?.uid))
   const [lastBackup, setLastBackup] = useState<number | null>(() => lastBackupAt())
-  const visibleCategories = SETTINGS_CATEGORIES.filter((item) => (item.id !== 'seasonal' || isHalloweenMonth) && `${item.label} ${item.words}`.toLocaleLowerCase('es').includes(settingsQuery.trim().toLocaleLowerCase('es')))
+  const [cloudBackups, setCloudBackups] = useState<CloudBackup[]>([])
+  const [backupBusy, setBackupBusy] = useState(false)
+  const visibleCategories = SETTINGS_CATEGORIES.filter((item) => (item.id !== 'seasonal' || isHalloweenMonth || isOwner) && `${item.label} ${item.words}`.toLocaleLowerCase('es').includes(settingsQuery.trim().toLocaleLowerCase('es')))
+  const [presence, setPresence] = useState<PresenceCounts | null>(null)
+  const [presenceError, setPresenceError] = useState(false)
+  const [holidayPreview, setHolidayPreviewState] = useState<HolidayPreview>(() => getHolidayPreview())
+
+  useEffect(() => {
+    if (!isOwner || !user) { setPresence(null); return }
+    let active = true
+    const refresh = () => loadPresenceCounts(user).then((result) => { if (active) { setPresence(result); setPresenceError(false) } }).catch(() => { if (active) setPresenceError(true) })
+    void refresh()
+    const timer = window.setInterval(refresh, 60_000)
+    return () => { active = false; window.clearInterval(timer) }
+  }, [isOwner, user])
 
   useEffect(() => {
     const sync = (event: Event) => {
       const detail = (event as CustomEvent<{ uid: string; time: number }>).detail
       if (detail?.uid === user?.uid) setLastSync(detail.time)
     }
-    const backup = () => setLastBackup(lastBackupAt())
+    const backup = () => {
+      setLastBackup(lastBackupAt())
+      if (user) listCloudBackups(user.uid).then(setCloudBackups).catch(() => {})
+    }
     window.addEventListener('tasklex:cloud-synced', sync)
     window.addEventListener('tasklex:backup-exported', backup)
     return () => { window.removeEventListener('tasklex:cloud-synced', sync); window.removeEventListener('tasklex:backup-exported', backup) }
   }, [user?.uid])
+
+  useEffect(() => {
+    let active = true
+    if (!user) {
+      setCloudBackups([])
+      return
+    }
+    listCloudBackups(user.uid)
+      .then((backups) => { if (active) setCloudBackups(backups) })
+      .catch(() => { if (active) setCloudBackups([]) })
+    return () => { active = false }
+  }, [user?.uid])
+
+  const saveCloudBackupNow = async () => {
+    if (!user) return
+    setBackupBusy(true)
+    try {
+      await createCloudBackup(user.uid)
+      setCloudBackups(await listCloudBackups(user.uid))
+      setLastBackup(lastBackupAt())
+      setMessage({ ok: true, text: 'Copia guardada en tu cuenta de Quacker.' })
+    } catch (error) {
+      setMessage({ ok: false, text: error instanceof Error ? error.message : 'No se pudo guardar la copia.' })
+    } finally {
+      setBackupBusy(false)
+      window.setTimeout(() => setMessage(null), 5000)
+    }
+  }
+
+  const importCloudBackup = async (backup: CloudBackup) => {
+    if (!user) return
+    setBackupBusy(true)
+    try {
+      const result = await restoreCloudBackup(user.uid, backup.path)
+      setMessage({ ok: result.ok, text: result.ok ? 'Copia importada. Tus tareas más recientes se conservaron.' : result.message })
+      window.setTimeout(() => setMessage(null), 5000)
+    } finally {
+      setBackupBusy(false)
+    }
+  }
 
   const canEditSeasons = canAccessSeasons(user?.email)
   const resetSeasons = useSeasonsStore((s) => s.resetAll)
@@ -271,6 +331,8 @@ export default function Settings() {
         <div className="card flex items-start gap-3 p-4"><span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${notificationsOn ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--surface-2)] text-[var(--text-muted)]'}`}><BellRing className="h-4 w-4" /></span><div><p className="text-xs font-bold">Notificaciones</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">Preferencia {notificationsOn ? 'activada' : 'desactivada'}</p></div></div>
         <div className="card flex items-start gap-3 p-4"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-500/10 text-sky-500"><Database className="h-4 w-4" /></span><div><p className="text-xs font-bold">Última copia exportada</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">{formatStatusDate(lastBackup)}</p></div></div>
       </section>
+
+      {isOwner && <section className="card mb-4 p-4" aria-label="Actividad real de usuarios"><div className="flex items-start gap-3"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-500/10 text-sky-500"><Users className="h-4 w-4" /></span><div className="min-w-0 flex-1"><p className="text-sm font-bold">Actividad de usuarios</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">Cifras reales desde que esta versión comenzó a registrar actividad: en línea en los últimos 2 minutos y desconectadas con actividad en los últimos 30 días.</p><div className="mt-3 grid grid-cols-2 gap-2"><div className="rounded-xl bg-[var(--surface-2)] p-3"><p className="text-[10px] font-semibold text-[var(--text-muted)]">En línea ahora</p><p className="mt-1 text-xl font-black">{presence?.online ?? '—'}</p></div><div className="rounded-xl bg-[var(--surface-2)] p-3"><p className="text-[10px] font-semibold text-[var(--text-muted)]">Desconectadas recientes</p><p className="mt-1 text-xl font-black">{presence?.offlineRecent ?? '—'}</p></div></div>{presenceError && <p className="mt-2 text-[11px] text-amber-600">No se pudo consultar el servicio de actividad. Se actualizará automáticamente.</p>}</div></div></section>}
 
       <div className="space-y-4">
       <div id="settings-help" className="card w-full scroll-mt-20 p-5">
@@ -498,7 +560,7 @@ export default function Settings() {
         </div>
       </div>
 
-      {isHalloweenMonth && <div id="settings-seasonal" className="card w-full scroll-mt-20 p-5">
+      {(isHalloweenMonth || isOwner) && <div id="settings-seasonal" className="card w-full scroll-mt-20 p-5">
         <p className="text-sm font-semibold">Ajustes de temporada</p>
         <p className="mt-1 text-xs text-[var(--text-muted)]">En octubre activa adornos de Halloween, arañas interactivas y lluvia ocasional. Puedes desactivar cada efecto; las animaciones respetan “Reducir movimiento” del dispositivo.</p>
         <div className="mt-4 space-y-3">
@@ -509,6 +571,7 @@ export default function Settings() {
             <p className="px-1 text-[11px] text-[var(--text-muted)]">La risa de bruja y el sonido de trueno se conectarán cuando me pases los audios. La música no se reproducirá hasta tener el archivo y poder activarla aquí.</p>
           </>}
         </div>
+        {isOwner && <div className="mt-5 border-t border-[var(--border)] pt-4"><p className="text-sm font-semibold">Vista previa privada de diciembre</p><p className="mt-1 text-xs text-[var(--text-muted)]">Solo tu cuenta puede activar estas decoraciones antes de diciembre. El resto verá cada evento automáticamente en sus fechas.</p><select value={holidayPreview} onChange={(event) => { const next = event.target.value as HolidayPreview; setHolidayPreviewState(next); setHolidayPreview(next) }} className="mt-3 min-h-10 w-full max-w-sm rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3 text-sm"><option value="auto">Automático según la fecha</option><option value="month">Decoración de todo diciembre</option><option value="christmas24">Nochebuena · 24 de diciembre</option><option value="christmas25">Navidad · 25 de diciembre</option><option value="newyear">Evento del 31 de diciembre</option></select></div>}
       </div>}
 
       <div id="settings-backup" className="card w-full scroll-mt-20 p-5">
@@ -516,7 +579,7 @@ export default function Settings() {
           <div>
             <p className="text-sm font-semibold">Backup automático</p>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
-              Exporta automáticamente tus datos a JSON.
+              Guarda automáticamente una copia en tu cuenta después de sincronizar tus datos.
             </p>
           </div>
           <button
@@ -548,6 +611,25 @@ export default function Settings() {
             ))}
           </div>
         )}
+        {user && <div className="mt-4 border-t border-[var(--border)] pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold">Copias en la nube</p>
+              <p className="mt-1 text-[11px] text-[var(--text-muted)]">Se conservan las 10 más recientes. La última copia: {formatStatusDate(cloudBackups[0]?.createdAt ?? null)}.</p>
+            </div>
+            <button type="button" onClick={saveCloudBackupNow} disabled={backupBusy || !isOnline} className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-semibold text-[var(--text)] hover:border-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50">
+              {backupBusy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <CloudUpload className="h-4 w-4" />}
+              Guardar copia ahora
+            </button>
+          </div>
+          {!isOnline && <p className="mt-2 text-[11px] text-amber-500">Conéctate para crear o consultar copias en la nube.</p>}
+          {cloudBackups.length > 0 ? <ul className="mt-3 space-y-2">
+            {cloudBackups.map((backup) => <li key={backup.path} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3">
+              <span className="text-xs text-[var(--text-muted)]">{formatStatusDate(backup.createdAt)} · {(backup.sizeBytes / 1024 / 1024).toFixed(1)} MB</span>
+              <button type="button" onClick={() => void importCloudBackup(backup)} disabled={backupBusy || !isOnline} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/10 disabled:opacity-50">Importar copia</button>
+            </li>)}
+          </ul> : <p className="mt-3 text-[11px] text-[var(--text-muted)]">Aún no hay copias guardadas.</p>}
+        </div>}
       </div>
 
       <div id="settings-sections" className="card w-full scroll-mt-20 p-5">

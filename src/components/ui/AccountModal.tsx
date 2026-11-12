@@ -105,7 +105,7 @@ export default function AccountModal({ open, onClose }: { open: boolean; onClose
 
         <div className="grid gap-2 sm:grid-cols-2">
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3"><p className="flex items-center gap-1.5 text-xs font-bold"><Cloud className="h-3.5 w-3.5 text-[var(--accent)]" />Sincronización</p><p className="mt-1 text-[10px] text-[var(--text-muted)]">{isOnline ? 'Conexión disponible' : 'Sin conexión'}{pendingOperations ? ` · ${pendingOperations} cambio${pendingOperations === 1 ? '' : 's'} pendiente${pendingOperations === 1 ? '' : 's'}` : ''}</p><p className="mt-1 text-[10px] text-[var(--text-muted)]">Última sincronización: {formatDate(lastSync)}</p></div>
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3"><p className="flex items-center gap-1.5 text-xs font-bold"><Database className="h-3.5 w-3.5 text-[var(--accent)]" />Copia de seguridad</p><p className="mt-1 text-[10px] text-[var(--text-muted)]">Última exportación: {formatDate(lastBackup)}</p></div>
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3"><p className="flex items-center gap-1.5 text-xs font-bold"><Database className="h-3.5 w-3.5 text-[var(--accent)]" />Copia de seguridad</p><p className="mt-1 text-[10px] text-[var(--text-muted)]">Último respaldo o exportación: {formatDate(lastBackup)}</p></div>
         </div>
 
         <div className="grid grid-cols-2 gap-2">

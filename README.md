@@ -5,7 +5,7 @@ inteligencia artificial, alarmas con tu propia música y sincronización en la n
 
 - Web PWA: `https://task-lex.vercel.app` (privacidad: `/privacidad`)
 - Android: APK con Capacitor (`com.tasklex.app`), login nativo de Google
-- Versión actual: **5.2.0** (la versión vive en `package.json` y alimenta `APP_VERSION`, el modal de
+- Versión actual: **5.2.19** (la versión vive en `package.json` y alimenta `APP_VERSION`, el modal de
   novedades y el aviso de actualización vía `public/update.json`)
 
 ## Qué tiene y para qué sirve cada cosa
@@ -39,7 +39,7 @@ pensativo mientras el asistente trabaja. Se puede **agarrar, arrastrar y lanzar*
 rebota en los bordes, se espeja según la dirección y aterriza en su plataforma abajo de la pantalla,
 donde se queda hasta que lo muevas (al abrir la app siempre sale de su sitio).
 
-**Extras.** Tutorial interactivo con spotlight, backup automático y manual en JSON, sincronización con
+**Extras.** Tutorial interactivo con spotlight, copias automáticas en la nube (con historial) y exportación manual en JSON, sincronización con
 Google Calendar, modo offline con cola de sincronización, archivo de completadas, estadísticas, opiniones,
 créditos, tema claro/oscuro y temas de colores por apartado, modal de novedades por versión y aviso
 automático de actualización disponible.
@@ -94,7 +94,7 @@ src/
 public/                    → icons/, quarkington/ (sprites generados), coins/, update.json
 api/                       → fox.mjs, parse-task.mjs (IA con gateo), checkout/verify/webhook
                              (Bold), referral.ts (referidos)
-android/                   → proyecto Capacitor (applicationId com.tasklex.app, versionCode 6)
+android/                   → proyecto Capacitor (applicationId com.tasklex.app, versionCode 25)
 brand/                     → iconos APK/gema + feature_graphic_1024x500.png
 ```
 

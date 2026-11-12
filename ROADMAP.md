@@ -74,9 +74,9 @@
 - Sonido de racha (fijo, no personalizable - sonido de reconocimiento de la app)
 
 ### 12. Backup automático en la nube
-- Backup diario automático
-- Historial de backups
-- Restaurar versión específica
+- Crear una copia en la nube cada 3, 5 o 7 días, después de sincronizar las tareas.
+- Conservar las 10 copias más recientes por usuario.
+- Importar una copia anterior fusionándola con los datos actuales y conservando la versión más reciente de cada tarea o nota.
 
 ### 13. Integración con otras apps
 - Compartir tarea en WhatsApp

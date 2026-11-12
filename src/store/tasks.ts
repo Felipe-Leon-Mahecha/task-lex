@@ -12,6 +12,7 @@ import { playTaskComplete, playNewTask, playDeleteTask } from '../lib/sounds'
 import { hapticImpact } from '../lib/haptics'
 import { ImpactStyle } from '@capacitor/haptics'
 import { useUndoStore } from './undo'
+import { useFoxSkinsStore } from './foxSkins'
 import type { Task } from '../types/task'
 
 function isTemporaryCloudError(error: unknown): boolean {
@@ -97,12 +98,24 @@ export const useTasksStore = create<TasksState>()(
         const previousTask = get().tasks.find((t) => t.id === id)
         
         set((s) => ({
-          tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...patch, updatedAt: new Date() } : t)),
+          tasks: s.tasks.map((t) => {
+            if (t.id !== id) return t
+            const next = { ...t, ...patch, updatedAt: new Date() }
+            if (patch.status === 'done') {
+              next.completedAt = t.status === 'done' && t.completedAt ? t.completedAt : (patch.completedAt ?? new Date())
+            } else if (patch.status) {
+              next.completedAt = null
+            }
+            return next
+          }),
         }))
         const updated = get().tasks.find((t) => t.id === id) ?? null
         const isOnline = useOfflineStore.getState().isOnline
         
         if (updated) {
+          if (!wasDone && updated.status === 'done') {
+            void useFoxSkinsStore.getState().recordTaskReward(id).catch(() => {})
+          }
           // Play sound if task was just completed
           const soundsEnabled = useSettingsStore.getState().soundsEnabled
           if (!wasDone && updated.status === 'done' && soundsEnabled) {

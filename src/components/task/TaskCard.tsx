@@ -8,7 +8,6 @@ import Modal from '../ui/Modal'
 import { shareTask } from '../../lib/share'
 import { useSettingsStore } from '../../store/settings'
 import { useTasksStore } from '../../store/tasks'
-import { useFoxSkinsStore } from '../../store/foxSkins'
 import { celebrateCompletion } from '../../lib/celebrate'
 import { useNotesStore } from '../../store/notes'
 
@@ -69,7 +68,6 @@ function toggleSubtask(task: Task, subId: string) {
       setTimeout(() => {
         const all = useTasksStore.getState().tasks
         celebrateCompletion(all)
-        useFoxSkinsStore.getState().recordTaskReward(fresh.id)
       }, 180)
     } else if (!allDone && fresh.status === 'done') {
       patch.status = 'pending'

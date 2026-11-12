@@ -1,7 +1,7 @@
 {
   "name": "task-lex",
   "private": true,
-  "version": "5.2.18",
+  "version": "5.2.19",
   "description": "Flux - Gestor de tareas profesional",
   "type": "module",
   "scripts": {

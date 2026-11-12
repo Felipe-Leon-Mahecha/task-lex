@@ -58,7 +58,7 @@ export function last7Focus(): { label: string; min: number }[] {
   for (let i = 6; i >= 0; i--) {
     const d = new Date()
     d.setDate(d.getDate() - i)
-    out.push({ label: labels[d.getDay()], min: map.get(dayKey(d)) ?? 0 })
+    out.push({ label: labels[(d.getDay() + 6) % 7], min: map.get(dayKey(d)) ?? 0 })
   }
   return out
 }

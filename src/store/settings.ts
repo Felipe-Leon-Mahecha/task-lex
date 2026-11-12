@@ -68,6 +68,8 @@ function pushToCloud(s: SettingsState) {
     focusMinutes: s.focusMinutes,
     shortBreak: s.shortBreak,
     notificationsOn: s.notificationsOn,
+    autoBackup: s.autoBackup,
+    backupFrequency: s.backupFrequency,
   }).catch(() => {})
 }
 

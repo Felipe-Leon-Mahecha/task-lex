@@ -7,19 +7,31 @@ import { reviveTask } from './tasks'
 import { getUid } from './session'
 import { setTask } from './taskDb'
 import { setFolderRemote, setNoteRemote, setNotesBgRemote } from './notesDb'
+import { auth, storage } from './firebase'
+import { deleteObject, getBytes, getMetadata, listAll, ref, uploadBytes } from 'firebase/storage'
+import { useOfflineStore } from '../store/offline'
 import type { SectionMeta, Task, ThemeConfig } from '../types/task'
 import type { NoteFolder, StoredNote } from '../types/notes'
 
 const AUTO_BACKUP_KEY = 'task-lex-last-backup'
 const backupKey = () => `${AUTO_BACKUP_KEY}:${getUid() ?? 'local'}`
+const MAX_CLOUD_BACKUPS = 10
+const MAX_CLOUD_BACKUP_BYTES = 20 * 1024 * 1024
 
-export function exportJSON() {
+export interface CloudBackup {
+  path: string
+  name: string
+  createdAt: number
+  sizeBytes: number
+}
+
+function backupPayload() {
   const tasks = useTasksStore.getState().tasks
   const themes = useThemeStore.getState().themes
   const sections = useSectionsStore.getState().sections
   const settings = useSettingsStore.getState()
   const { folders, notes, bgImage } = useNotesStore.getState()
-  const payload = {
+  return {
     app: 'task-lex',
     version: 3,
     exportedAt: new Date().toISOString(),
@@ -50,6 +62,62 @@ export function exportJSON() {
       backupFrequency: settings.backupFrequency,
     },
   }
+}
+
+function markBackupCreated(uid?: string) {
+  try {
+    localStorage.setItem(`${AUTO_BACKUP_KEY}:${uid ?? 'local'}`, String(Date.now()))
+    window.dispatchEvent(new CustomEvent('tasklex:backup-exported'))
+  } catch {}
+}
+
+export async function listCloudBackups(uid: string): Promise<CloudBackup[]> {
+  if (!storage || auth?.currentUser?.uid !== uid) throw new Error('Inicia sesión para consultar tus copias.')
+  const result = await listAll(ref(storage, `users/${uid}/backups`))
+  const backups = await Promise.all(result.items.map(async (item) => {
+    const metadata = await getMetadata(item)
+    return {
+      path: item.fullPath,
+      name: item.name,
+      createdAt: Date.parse(metadata.timeCreated ?? '') || 0,
+      sizeBytes: Number(metadata.size ?? 0),
+    }
+  }))
+  return backups.sort((a, b) => b.createdAt - a.createdAt)
+}
+
+export async function createCloudBackup(uid: string): Promise<CloudBackup> {
+  if (!storage || auth?.currentUser?.uid !== uid) throw new Error('Inicia sesión para guardar una copia.')
+  if (!useOfflineStore.getState().isOnline) throw new Error('Conéctate a internet para guardar la copia en la nube.')
+  if (useOfflineStore.getState().pendingOperations.length > 0) throw new Error('Espera a que se sincronicen tus cambios antes de guardar la copia.')
+  const createdAt = Date.now()
+  const name = `backup-${new Date(createdAt).toISOString().replace(/[:.]/g, '-')}.json`
+  const backupRef = ref(storage, `users/${uid}/backups/${name}`)
+  const content = new Blob([JSON.stringify(backupPayload())], { type: 'application/json' })
+  if (content.size >= MAX_CLOUD_BACKUP_BYTES) throw new Error('La copia supera el límite de 20 MB. Reduce el peso de las imágenes e inténtalo de nuevo.')
+  await uploadBytes(backupRef, content, { contentType: 'application/json' })
+  const metadata = await getMetadata(backupRef)
+  const backups = await listCloudBackups(uid)
+  await Promise.all(backups.slice(MAX_CLOUD_BACKUPS).map((backup) => deleteObject(ref(storage!, backup.path)).catch(() => {})))
+  markBackupCreated(uid)
+  return { path: backupRef.fullPath, name, createdAt: Date.parse(metadata.timeCreated ?? '') || createdAt, sizeBytes: Number(metadata.size ?? content.size) }
+}
+
+export async function restoreCloudBackup(uid: string, path: string): Promise<{ ok: boolean; message: string }> {
+  if (!storage || auth?.currentUser?.uid !== uid || !path.startsWith(`users/${uid}/backups/`)) {
+    return { ok: false, message: 'No se pudo acceder a esa copia.' }
+  }
+  try {
+    const bytes = await getBytes(ref(storage, path))
+    const file = new File([bytes], path.split('/').pop() ?? 'respaldo.json', { type: 'application/json' })
+    return await importJSON(file)
+  } catch {
+    return { ok: false, message: 'No se pudo descargar la copia de la nube.' }
+  }
+}
+
+export function exportJSON() {
+  const payload = backupPayload()
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -57,10 +125,7 @@ export function exportJSON() {
   a.download = `task-lex-backup-${new Date().toISOString().slice(0, 10)}.json`
   a.click()
   URL.revokeObjectURL(url)
-  try {
-    localStorage.setItem(backupKey(), String(Date.now()))
-    window.dispatchEvent(new CustomEvent('tasklex:backup-exported'))
-  } catch {}
+  markBackupCreated(getUid() ?? undefined)
 }
 
 export function lastBackupAt(): number | null {
@@ -70,22 +135,25 @@ export function lastBackupAt(): number | null {
   } catch { return null }
 }
 
-export function checkAutoBackup() {
+let autoBackupInProgress: Promise<void> | null = null
+
+export function checkAutoBackup(uid: string): Promise<void> {
+  if (autoBackupInProgress) return autoBackupInProgress
   const settings = useSettingsStore.getState()
-  if (!settings.autoBackup) return
-
-  try {
-    const lastBackup = localStorage.getItem(backupKey()) ?? localStorage.getItem(AUTO_BACKUP_KEY)
-    const now = Date.now()
-    const frequencyMs = settings.backupFrequency * 24 * 60 * 60 * 1000
-
-    if (!lastBackup || now - parseInt(lastBackup) > frequencyMs) {
-      exportJSON()
-      localStorage.setItem(backupKey(), now.toString())
+  if (!settings.autoBackup || !useOfflineStore.getState().isOnline || useOfflineStore.getState().pendingOperations.length > 0 || auth?.currentUser?.uid !== uid) return Promise.resolve()
+  autoBackupInProgress = (async () => {
+    try {
+      const backups = await listCloudBackups(uid)
+      const latest = backups[0]?.createdAt ?? 0
+      const frequencyMs = settings.backupFrequency * 24 * 60 * 60 * 1000
+      if (!latest || Date.now() - latest >= frequencyMs) await createCloudBackup(uid)
+    } catch (error) {
+      console.error('Error checking auto-backup:', error)
+    } finally {
+      autoBackupInProgress = null
     }
-  } catch (error) {
-    console.error('Error checking auto-backup:', error)
-  }
+  })()
+  return autoBackupInProgress
 }
 
 export function importJSON(file: File): Promise<{ ok: boolean; message: string }> {

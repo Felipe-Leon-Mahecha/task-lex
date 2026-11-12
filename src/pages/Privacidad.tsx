@@ -5,7 +5,7 @@ export default function Privacidad() {
     <div className="mx-auto w-full max-w-4xl">
       <p className="eyebrow">Legal</p>
       <h1 className="mb-2 text-2xl font-bold tracking-tight">Política de privacidad</h1>
-      <p className="mb-6 text-xs text-[var(--text-muted)]">Quacker · com.tasklex.app · Última actualización: 4 de octubre de 2026</p>
+      <p className="mb-6 text-xs text-[var(--text-muted)]">Quacker · com.tasklex.app · Última actualización: 12 de noviembre de 2026</p>
       <nav aria-label="Índice de privacidad" className="sticky top-0 z-20 -mx-4 mb-5 flex gap-2 overflow-x-auto border-y border-[var(--border)] bg-[var(--bg)]/95 px-4 py-3 backdrop-blur md:-mx-8 md:px-8">{[['contacto','Responsable'],['datos','Datos'],['uso','Uso'],['terceros','Servicios'],['seguridad','Seguridad'],['derechos','Derechos'],['cambios','Cambios']].map(([id,label]) => <a key={id} href={`#privacy-${id}`} className="shrink-0 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]">{label}</a>)}</nav>
       <div className="grid items-start gap-4 md:grid-cols-2">
         <div id="privacy-contacto" className="card scroll-mt-20 space-y-3 p-6 text-sm leading-relaxed">
@@ -22,6 +22,7 @@ export default function Privacidad() {
             <li>Compras: historial gestionado por RevenueCat. Nunca guardamos tu tarjeta.</li>
             <li>Ubicación precisa: solo si aceptas el permiso, para el clima y el modo frío de la mascota (se envía a Open-Meteo, no la guardamos).</li>
             <li>Uso y diagnóstico: logs técnicos y de rendimiento estándar para estabilidad.</li>
+            <li>Presencia: mientras la app está abierta y visible, guardamos una señal de actividad cada minuto. Se elimina al cumplir 30 días y permite calcular actividad reciente; la cuenta no se muestra en el panel, que solo enseña totales al administrador.</li>
           </ul>
         </div>
         <div id="privacy-uso" className="card scroll-mt-20 space-y-3 p-6 text-sm leading-relaxed">

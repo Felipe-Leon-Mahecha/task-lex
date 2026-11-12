@@ -14,7 +14,6 @@ import { useSectionsStore } from '../store/sections'
 import { createTask, toTaskInput, type TaskInput } from '../lib/tasks'
 import { nextOccurrence } from '../lib/recurrence'
 import { celebrateCompletion } from '../lib/celebrate'
-import { useFoxSkinsStore } from '../store/foxSkins'
 import { useSettingsStore } from '../store/settings'
 import { playAppSound } from '../lib/soundEffects'
 import type { Priority, Recurrence, SectionId, Status, Task, ViewMode } from '../types/task'
@@ -168,7 +167,6 @@ export default function Section({ sectionId }: { sectionId: SectionId }) {
   const applyStatus = useCallback((t: Task, next: Status) => {
     if (next === 'done' && t.status !== 'done') {
       setTimeout(() => celebrateCompletion(useTasksStore.getState().tasks), 180)
-      useFoxSkinsStore.getState().recordTaskReward(t.id)
     }
     useTasksStore
       .getState()

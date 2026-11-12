@@ -12,8 +12,19 @@ export default defineConfig({
       manifest: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
-        globIgnores: ['**/quarkington/**'],
+        globIgnores: ['**/quarkington/**', '**/fox/**', '**/coins/**'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => /^\/(fox|quarkington|coins)\//.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'quacker-images',
+              expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],

@@ -32,6 +32,8 @@ import { getQuackingtonSkinById } from './lib/quackingtonSkins'
 import { syncMascotWidget } from './lib/nativeWidget'
 import { useFoxSkinsStore } from './store/foxSkins'
 import HalloweenAmbience, { HalloweenFooter } from './components/seasons/HalloweenAmbience'
+import DecemberAmbience from './components/seasons/DecemberAmbience'
+import { startPresence } from './lib/presence'
 import { notifyApp } from './lib/appNotifications'
 import { playAppSound, playAppStartupSound } from './lib/soundEffects'
 
@@ -111,6 +113,11 @@ export default function App() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const demo = useAuthStore((s) => s.demo)
+
+  useEffect(() => {
+    if (!user || demo) return
+    return startPresence(user)
+  }, [user, demo])
   const loading = useAuthStore((s) => s.loading)
   const openSidebar = useUIStore((s) => s.openSidebar)
   const updateModalOpen = useUIStore((s) => s.updateModalOpen)
@@ -137,6 +144,7 @@ export default function App() {
   const seenCompletedTasksRef = useRef<Set<string> | null>(null)
   const achievementUserRef = useRef<string | null>(null)
   const achievementActiveSinceRef = useRef(0)
+  const cloudReadyForBackupRef = useRef(false)
   const touchX = useRef<number | null>(null)
   const touchY = useRef<number | null>(null)
   const appThemeId = useSettingsStore((s) => s.appThemeId)
@@ -145,6 +153,8 @@ export default function App() {
   const highContrast = useSettingsStore((s) => s.highContrast)
   const notificationsOn = useSettingsStore((s) => s.notificationsOn)
   const dailyReminderFrequency = useSettingsStore((s) => s.dailyReminderFrequency)
+  const autoBackup = useSettingsStore((s) => s.autoBackup)
+  const backupFrequency = useSettingsStore((s) => s.backupFrequency)
   const claimWindowsWelcomeReward = useFoxSkinsStore((s) => s.claimWindowsWelcomeReward)
 
   useEffect(() => {
@@ -283,8 +293,31 @@ export default function App() {
   // Initialize network listener
   useEffect(() => {
     initNetworkListener()
-    checkAutoBackup()
   }, [])
+
+  useEffect(() => {
+    cloudReadyForBackupRef.current = false
+    if (!user || demo) return
+    const onCloudSync = (event: Event) => {
+      const detail = (event as CustomEvent<{ uid: string }>).detail
+      if (detail?.uid !== user.uid) return
+      if (event.type === 'tasklex:backup-ready') cloudReadyForBackupRef.current = true
+      if (!cloudReadyForBackupRef.current) return
+      void checkAutoBackup(user.uid)
+    }
+    window.addEventListener('tasklex:backup-ready', onCloudSync)
+    window.addEventListener('tasklex:backup-retry', onCloudSync)
+    return () => {
+      window.removeEventListener('tasklex:backup-ready', onCloudSync)
+      window.removeEventListener('tasklex:backup-retry', onCloudSync)
+    }
+  }, [user?.uid, demo])
+
+  useEffect(() => {
+    if (user && !demo && cloudReadyForBackupRef.current && autoBackup) {
+      void checkAutoBackup(user.uid)
+    }
+  }, [user?.uid, demo, autoBackup, backupFrequency])
 
   // Handle notification actions
   useEffect(() => {
@@ -510,6 +543,7 @@ export default function App() {
       <NotificationCenter />
       <GlobalTaskCreator />
       <HalloweenAmbience />
+      <DecemberAmbience />
       {location.pathname !== '/temporadas' && <FoxPanel />}
       {alarm && (
         <AlarmOverlay

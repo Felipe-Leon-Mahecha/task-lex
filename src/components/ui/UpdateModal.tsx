@@ -6,7 +6,7 @@ import { ADMIN_EMAIL, APP_VERSION } from '../../lib/appInfo'
 import { ApkInstaller } from '../../lib/nativeApkUpdater'
 import { useAuthStore } from '../../store/auth'
 
-const OWNER_ONLY_PREFIXES = ['🎭 Temporadas', '🔄 Hasta 2 re-sorteos', '🤖 Quiz con IA', '🎉 Al sortear']
+const OWNER_ONLY_PREFIXES = ['🎭 Temporadas', '🔄 Hasta 2 re-sorteos', '🤖 Quiz con IA', '🎉 Al sortear', '🔒 Vista previa privada']
 
 interface UpdateModalProps {
   onClose: () => void
@@ -14,6 +14,11 @@ interface UpdateModalProps {
 }
 
 const CHANGELOG: Record<string, string[]> = {
+  '5.2.19': [
+    '🧭 Tutorial ampliado para recorrer las secciones principales; el foco visual ahora solo señala controles concretos.',
+    '📊 Actividad real de cuentas para el panel privado de administración y actualización de la política de privacidad.',
+    '🔒 Vista previa privada de las decoraciones de diciembre y sus eventos del 24, 25 y 31.',
+  ],
   '5.2.18': [
     '🦊🦆 19 skins nuevas incorporadas con sus rarezas y precios correctos.',
     '❄️ Pato de nieve aparece en la tienda durante diciembre; Navideño y Noel quedan como recompensas exclusivas de temporada.',

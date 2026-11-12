@@ -44,6 +44,10 @@ export async function deleteAccount(uid: string): Promise<DeleteResult> {
   const lastSignInAt = Date.parse(currentUser.metadata.lastSignInTime ?? '')
   if (!Number.isFinite(lastSignInAt) || Date.now() - lastSignInAt > 4 * 60 * 1000) return 'recent-login'
   try {
+    const token = await currentUser.getIdToken()
+    await fetch('/api/presence', { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+  } catch {}
+  try {
     await wipeUserData(uid)
   } catch {
     return 'error'
